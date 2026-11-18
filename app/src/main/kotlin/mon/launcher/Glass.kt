@@ -29,11 +29,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 /** Fill used when there's no wallpaper to blur. */
 private val NO_WALLPAPER_GLASS = Color(0xFF2A2B31)
 
 private val vivid = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.1f) })
+
+/** Reused clip shape for [dockGlass]; see [shadowCard]. */
+private val glassClip = Path()
 
 /**
  * Frosted glass background: the blurred wallpaper aligned to the screen, darkened by [tint],
@@ -49,7 +53,9 @@ fun Modifier.dockGlass(
     var origin by remember { mutableStateOf(Offset.Zero) }
     onGloballyPositioned { origin = it.positionInRoot() }.drawBehind {
         val radius = CornerRadius(corner.toPx().coerceAtMost(size.height / 2))
-        clipPath(Path().apply { addRoundRect(RoundRect(0f, 0f, size.width, size.height, radius)) }) {
+        glassClip.reset()
+        glassClip.addRoundRect(RoundRect(0f, 0f, size.width, size.height, radius))
+        clipPath(glassClip) {
             if (backdrop != null && screen != IntSize.Zero) {
                 drawImage(
                     backdrop,
@@ -99,16 +105,27 @@ fun Modifier.tileSurface(lit: Float, corner: Dp, rimBright: Float = 0.32f): Modi
     }
 }
 
+// Shadow drawing objects, reused instead of allocated on every frame of every tile. Drawing only
+// happens on the main thread, and the canvas records copies, so sharing them is safe.
+private val shadowCard = Path()
+private val shadowPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+/** Blur filters by radius in whole pixels. Rounding keeps the cache small while focus animates. */
+private val shadowBlurs = HashMap<Int, android.graphics.BlurMaskFilter>()
+
 /** Shadow clipped to outside the card, so it doesn't show through translucent tiles. */
 private fun DrawScope.shadowOutside(radius: CornerRadius, blur: Float, dropY: Float, alpha: Float) {
-    val card = Path().apply { addRoundRect(RoundRect(0f, 0f, size.width, size.height, radius)) }
-    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.argb((alpha * 255).toInt(), 0, 0, 0)
-        maskFilter = android.graphics.BlurMaskFilter(blur, android.graphics.BlurMaskFilter.Blur.NORMAL)
+    shadowCard.reset()
+    shadowCard.addRoundRect(RoundRect(0f, 0f, size.width, size.height, radius))
+    // A blur radius of 0 is invalid, so the smallest is 1 pixel.
+    val blurPx = blur.roundToInt().coerceAtLeast(1)
+    shadowPaint.color = android.graphics.Color.argb((alpha * 255).toInt(), 0, 0, 0)
+    shadowPaint.maskFilter = shadowBlurs.getOrPut(blurPx) {
+        android.graphics.BlurMaskFilter(blurPx.toFloat(), android.graphics.BlurMaskFilter.Blur.NORMAL)
     }
-    clipPath(card, ClipOp.Difference) {
+    clipPath(shadowCard, ClipOp.Difference) {
         drawIntoCanvas {
-            it.nativeCanvas.drawRoundRect(0f, dropY, size.width, size.height + dropY, radius.x, radius.y, paint)
+            it.nativeCanvas.drawRoundRect(0f, dropY, size.width, size.height + dropY, radius.x, radius.y, shadowPaint)
         }
     }
 }
