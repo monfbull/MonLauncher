@@ -33,9 +33,9 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Fail instead of falling back to the debug key.
+            // Null without keystore.properties. Release tasks then fail (see the end of this file),
+            // while debug builds still work for anyone who clones the repo.
             signingConfig = signingConfigs.findByName("release")
-                ?: throw GradleException("Release signing needs keystore.properties (see app/build.gradle.kts)")
         }
     }
     compileOptions {
@@ -55,6 +55,11 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.activity:activity-compose:1.9.3")
+    // Used directly by the app, so declared here rather than relied on through activity-compose.
+    // These are minimum versions: if activity-compose brings in newer ones, Gradle uses those.
+    implementation("androidx.core:core-ktx:1.13.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.google.zxing:core:3.5.3") // QR codes
 }
 
@@ -66,6 +71,16 @@ tasks.matching { it.name == "assembleRelease" }.configureEach {
         copy {
             from(layout.buildDirectory.file("outputs/mapping/release/mapping.txt"))
             into(rootProject.file("release-mappings/$version"))
+        }
+    }
+}
+
+// Release builds need the signing key. preReleaseBuild runs before every other release task, so
+// this fails before anything is built, instead of producing an unsigned APK.
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst {
+        if (!rootProject.file("keystore.properties").exists()) {
+            throw GradleException("Release signing needs keystore.properties (see app/build.gradle.kts)")
         }
     }
 }
