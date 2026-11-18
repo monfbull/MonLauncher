@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
-/** Whether the welcome tips have been shown. */
 class WelcomeStore(context: Context) {
     private val prefs = context.getSharedPreferences("welcome", Context.MODE_PRIVATE)
 
@@ -32,7 +31,7 @@ class WelcomeStore(context: Context) {
     }
 }
 
-/** First-run tips: the main remote controls and where things are. Shown once; reopened from About. */
+/** Shown on first run. Can be opened again from About. */
 @Composable
 fun WelcomePanel(onDismiss: () -> Unit) {
     val context = LocalContext.current

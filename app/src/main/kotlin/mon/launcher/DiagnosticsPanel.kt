@@ -31,10 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
-/** How long the phone pages stay available, in minutes. */
 const val LAN_PAGE_MINUTES = 10
 
-/** About & diagnostics: version and device details, and the full report served to a phone. */
 @Composable
 fun DiagnosticsPanel(onShowWelcome: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
@@ -68,7 +66,6 @@ fun DiagnosticsPanel(onShowWelcome: () -> Unit, onDismiss: () -> Unit) {
     if (sharing) DiagnosticsSharePanel(onDismiss = { sharing = false })
 }
 
-/** A non-focusable label/value row. */
 @Composable
 private fun InfoRow(label: String, value: String) {
     Row(
@@ -120,7 +117,7 @@ fun DiagnosticsSharePanel(onDismiss: () -> Unit) {
     )
 }
 
-/** Shows a [LanServer] address as a QR code and text. [failed] means the server couldn't start. */
+/** [failed] means the server couldn't start. */
 @Composable
 fun LanAddressPanel(
     title: String,
@@ -151,7 +148,6 @@ fun LanAddressPanel(
     }
 }
 
-/** Model name, prefixed with the manufacturer unless the model already starts with it. */
 fun deviceName(): String =
     if (Build.MODEL.startsWith(Build.MANUFACTURER, ignoreCase = true)) Build.MODEL else "${Build.MANUFACTURER} ${Build.MODEL}"
 
@@ -179,8 +175,8 @@ private fun reportPage(report: String): String {
 }
 
 /**
- * Shown instead of the home screen after a crash loop. Avoids the wallpaper, logos and app list,
- * the likeliest causes of a startup crash.
+ * Shown instead of the home screen after a crash loop.
+ * Skips the wallpaper, logos and app list, the most likely causes of a crash on start.
  */
 @Composable
 fun RecoveryScreen(onTryAgain: () -> Unit, onReset: () -> Unit) {

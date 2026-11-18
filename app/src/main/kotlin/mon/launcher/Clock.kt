@@ -26,10 +26,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * Time and date, updated on the minute. Follows the system 12/24-hour setting, and the locale's
- * date order (e.g. "Wednesday, November 18" or "Wednesday 18 November").
- */
 @Composable
 fun Clock(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -40,7 +36,7 @@ fun Clock(modifier: Modifier = Modifier) {
             delay(60_000L - System.currentTimeMillis() % 60_000L)
         }
     }
-    // Rebuilt each minute so changes to the time format, locale or time zone are picked up.
+    // Rebuilt every minute to pick up changes to the time format, locale, or time zone.
     val formats = remember(now) {
         val locale = Locale.getDefault()
         val is24Hour = DateFormat.is24HourFormat(context)

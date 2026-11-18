@@ -52,12 +52,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 
-/** Current wallpaper, for drawing panel glass. */
 val LocalWallpaper = compositionLocalOf<WallpaperImages?> { null }
 
 /**
- * Disables the system dialog dim, which appears before the content and causes a flash.
- * Panels draw their own dim. Call first thing inside a Dialog.
+ * The system dim shows before the content and causes a flash.
+ * Panels draw their own dim instead.
+ * Call first inside a Dialog.
  */
 @Composable
 fun NoSystemDim() {
@@ -65,7 +65,6 @@ fun NoSystemDim() {
     SideEffect { window?.setDimAmount(0f) }
 }
 
-/** Text styles used by panels. */
 object PanelText {
     val title = TextStyle(color = Color.White.copy(alpha = 0.65f), fontFamily = Inter, fontSize = 14.sp)
     val heading = TextStyle(color = Color.White, fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
@@ -74,16 +73,15 @@ object PanelText {
     val note = TextStyle(color = Color.White.copy(alpha = 0.6f), fontFamily = Inter, fontSize = 15.sp)
 }
 
-/** Row corner radius, matching the tiles so rows sit concentric with the panel corners. */
+/** Same as tiles, so row corners share a center with the panel corners. */
 private val ROW_CORNER = TILE_CORNER
 
-/** Centered glass panel used for settings screens and menus. Back calls [onDismiss]. */
 @Composable
 fun GlassPanel(
     title: String?,
     width: Dp,
     onDismiss: () -> Unit,
-    /** Play the back sound on dismiss. Off where Back does nothing. */
+    /** Off where Back does nothing. */
     backSound: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -131,7 +129,6 @@ fun GlassPanel(
     }
 }
 
-/** A focusable panel row. OK calls [onSelect]; Left/Right call [onAdjust] with -1/+1 if set. */
 @Composable
 fun PanelRow(
     requester: FocusRequester,
@@ -187,7 +184,6 @@ fun PanelRow(
     )
 }
 
-/** A centered action button: light at rest, white with dark text when focused. */
 @Composable
 fun PanelButton(text: String, requester: FocusRequester, onSelect: () -> Unit, modifier: Modifier = Modifier) {
     val sounds = LocalSounds.current
@@ -226,13 +222,12 @@ fun PanelButton(text: String, requester: FocusRequester, onSelect: () -> Unit, m
     }
 }
 
-/** A menu row with a single label. */
 @Composable
 fun PanelChoice(text: String, requester: FocusRequester, onSelect: () -> Unit) {
     PanelRow(requester, onSelect) { BasicText(text, style = PanelText.row) }
 }
 
-/** Body text inside a panel, aligned with row text. */
+/** Padded to line up with row text. */
 @Composable
 fun PanelNote(text: String, modifier: Modifier = Modifier, style: TextStyle = PanelText.note) {
     BasicText(text, modifier.padding(horizontal = 14.dp, vertical = 4.dp), style = style)

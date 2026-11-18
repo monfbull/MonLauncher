@@ -4,13 +4,10 @@ import java.io.File
 import java.io.InputStream
 import java.net.URLDecoder
 
-/**
- * Web page for uploading a wallpaper from another device on the network. Runs only while the
- * upload panel is open and stops after the first upload. [onUploaded] runs on a background thread.
- */
+/** Stops after the first upload. [onUploaded] runs on a background thread. */
 class UploadServer(
     private val library: WallpaperLibrary,
-    /** Small blurred PNG of the current wallpaper for the page background, if any. */
+    /** Blurred wallpaper PNG for the page background, or null. */
     private val backdrop: () -> ByteArray?,
     private val onUploaded: (file: File, apply: Boolean) -> Unit,
 ) {
@@ -25,7 +22,6 @@ class UploadServer(
         }
     }
 
-    /** Page address, or null without a network connection. */
     val address: String? get() = server.address
 
     fun start() = server.start()
@@ -64,7 +60,6 @@ class UploadServer(
     }
 
     companion object {
-        /** Upload page markup. */
         private val PAGE = """
 <!doctype html>
 <html lang="en">
@@ -79,15 +74,14 @@ class UploadServer(
   html { background: #16161a; }
   body {
     margin: 0;
-    /* dvh: 100vh is taller than the visible area on some mobile browsers. */
+    /* 100vh is too tall on some mobile browsers. dvh fixes that. */
     min-height: 100vh; min-height: 100dvh;
     display: flex; align-items: center; justify-content: center;
     padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     font: 16px/1.45 Inter, system-ui, sans-serif;
-    /* No background, so the backdrop layers show through. */
+    /* No background, so the backdrop shows through. */
     color: var(--text); overflow-x: hidden;
   }
-  /* Blurred copy of the TV wallpaper. */
   .backdrop { position: fixed; inset: -60px; z-index: -2; background: #23232a center / cover no-repeat; filter: blur(40px) saturate(1.15); transform: scale(1.1); }
   .scrim { position: fixed; inset: 0; z-index: -1; background: rgba(0,0,0,.40); }
 
@@ -128,7 +122,7 @@ class UploadServer(
 
   .row { cursor: pointer; user-select: none; -webkit-user-select: none; }
 
-  /* Toggle implemented as a button for consistent behaviour across browsers. */
+  /* A button, not a checkbox, so it looks the same in every browser. */
   .switch {
     position: relative; display: block; flex: none; width: 51px; height: 31px; padding: 0; border: 0; border-radius: 99px;
     background: rgba(255,255,255,.18); cursor: pointer; transition: background .2s ease;

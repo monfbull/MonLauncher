@@ -27,13 +27,12 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** User preferences set from the settings panel. */
 data class LauncherSettings(
     val soundsOn: Boolean = true,
     val soundVolume: Int = 8,
-    /** File name of the selected wallpaper, or null if none was selected. */
+    /** Wallpaper file name. Null means use the newest wallpaper. */
     val wallpaper: String? = null,
-    /** Icon pack package. Empty for no pack; null if never chosen (see [IconPacks.effective]). */
+    /** Icon pack package name. Empty means no pack. Null means never chosen. */
     val iconPack: String? = null,
 ) {
     companion object {
@@ -41,7 +40,6 @@ data class LauncherSettings(
     }
 }
 
-/** Persists [LauncherSettings] in shared preferences. */
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
@@ -71,7 +69,6 @@ class SettingsStore(context: Context) {
     }
 }
 
-/** The settings panel. Changes apply immediately. */
 @Composable
 fun SettingsPanel(
     settings: LauncherSettings,
@@ -85,7 +82,6 @@ fun SettingsPanel(
     var showDiagnostics by remember { mutableStateOf(false) }
     var showIconPacks by remember { mutableStateOf(false) }
     val iconPacks = remember { IconPacks(context) }
-    // Looked up off the main thread, and again only when the choice changes. Null until loaded.
     val iconPackName by produceState<String?>(null, settings.iconPack) {
         value = withContext(Dispatchers.IO) {
             iconPacks.effective(settings.iconPack)
@@ -145,7 +141,6 @@ fun SettingsPanel(
     }
 }
 
-/** Volume meter with [LauncherSettings.MAX_VOLUME] segments. */
 @Composable
 private fun VolumeBar(level: Int, enabled: Boolean) {
     val alpha = if (enabled) 1f else 0.35f

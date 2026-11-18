@@ -8,27 +8,26 @@ import kotlinx.coroutines.withContext
 import mon.launcher.core.Logo
 import mon.launcher.core.Tile
 
-/** A tile image. [fill] images (banners) cover the whole tile; others are inset. */
+/** [fill] images (banners) cover the whole tile. Others get padding. */
 class TileArt(val image: ImageBitmap, val fill: Boolean)
 
 /**
- * Loads and caches tile images. With an icon pack: the pack's image, else the adaptive icon
- * foreground, else the TV banner, else the full icon. Without one: the TV banner, else the icon.
+ * With an icon pack: pack image, else icon foreground, else TV banner, else full icon.
+ * Without a pack: TV banner, else full icon.
  */
 class TileImages(private val apps: AppSource, private val iconPacks: IconPacks) {
     private val cache = LruCache<String, TileArt>(160)
 
-    /** Current icon pack. Changing it clears the cache. */
     var pack: String? = null
         set(value) {
             if (value != field) cache.evictAll()
             field = value
         }
 
-    /** Cached image, if loaded, so tiles can draw on their first frame. */
+    /** Lets tiles draw on their first frame. */
     fun peek(tile: Tile): TileArt? = cache.get(key(tile))
 
-    /** Loads images ahead of time so opening the grid doesn't wait on disk. */
+    /** Call early, so opening the grid doesn't wait on disk reads. */
     suspend fun preload(tiles: List<Tile>) = tiles.forEach { get(it) }
 
     suspend fun get(tile: Tile): TileArt? {

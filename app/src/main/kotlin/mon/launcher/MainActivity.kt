@@ -39,15 +39,15 @@ class MainActivity : ComponentActivity() {
     private var wallpaper by mutableStateOf<WallpaperImages?>(null)
     private var focusRequest by mutableStateOf<FocusRequest?>(null)
     private var homePresses by mutableIntStateOf(0)
-    /** Set when another app or screen covered the launcher; cleared on resume. */
+    /** True while another app or screen covers the launcher. */
     private var leftForApp = false
     private var settings by mutableStateOf(LauncherSettings())
     private lateinit var welcome: WelcomeStore
     private var showWelcome by mutableStateOf(false)
     private var wallpaperLoad: Job? = null
-    /** Version of the wallpaper currently loading, to avoid starting the same load twice. */
+    /** Stops the same wallpaper from loading twice. */
     private var wallpaperLoading: String? = null
-    /** True when showing the recovery screen; the rest of the activity isn't initialized. */
+    /** When true, the lateinit fields are not set. */
     private var recovering = false
 
     private val packageReceiver = object : BroadcastReceiver() {
@@ -127,8 +127,8 @@ class MainActivity : ComponentActivity() {
             val started = Home.start(installed, store.load(), DEFAULT_DOCK, catalog)
             store.save(started.saved)
             home = started
-            // If the process was killed while an app was in front, return to that app's tile.
-            // After a reboot or a launcher crash, start at the dock.
+            // If the process died while an app was open, focus that app's tile.
+            // After a reboot or a launcher crash, focus the dock.
             val crashedSinceLaunch = CrashLog.lastCrashAt(this@MainActivity) > store.openedAt()
             val resume = store.openedSinceBoot() && store.returnPending() && !crashedSinceLaunch
             focusRequest = FocusRequest(if (resume) started.returnFocus else started.homeFocus)
@@ -151,8 +151,10 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Home pressed. Returning from an app launched here focuses its tile; returning from anything else
-     * keeps the current focus; pressing Home on the launcher itself closes overlays and focuses the dock.
+     * Home pressed.
+     * Coming back from an app opened here focuses its tile.
+     * Coming back from anything else keeps focus.
+     * Pressing Home on the launcher closes overlays and focuses the dock.
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -184,7 +186,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    /** Resets dock, hidden apps, settings and caches. Wallpapers are kept. */
+    /** Wallpaper photos are kept. */
     private fun resetLauncher() {
         listOf("home", "settings").forEach { getSharedPreferences(it, MODE_PRIVATE).edit().clear().commit() }
         File(filesDir, "wallpaper").deleteRecursively()
@@ -202,7 +204,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Reloads the wallpaper if the selection or file changed. */
     private fun refreshWallpaper() {
         lifecycleScope.launch {
             val file = withContext(Dispatchers.IO) { chosenWallpaper() }
@@ -225,7 +226,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** The selected wallpaper, or the newest one if none is selected or it was deleted. */
     private fun chosenWallpaper(): File? {
         wallpapers.seedDefault()
         return settings.wallpaper?.let { File(wallpapers.folder, it) }?.takeIf { it.exists() }
@@ -270,5 +270,5 @@ private val ARROW_KEYS = setOf(
     KeyEvent.KEYCODE_DPAD_RIGHT,
 )
 
-/** A focus request. A new instance per request, so repeating the same target still triggers. */
+/** Not a data class, so requesting the same target twice still triggers. */
 class FocusRequest(val target: Focus)

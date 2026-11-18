@@ -1,9 +1,7 @@
-# Build outputs
 build/
 *.apk
 *.aab
 
-# Gradle / Kotlin / IDE
 .gradle/
 .kotlin/
 .idea/
@@ -11,16 +9,14 @@ build/
 .cxx/
 captures/
 
-# Local config and signing
 local.properties
 keystore.properties
 *.jks
 *.keystore
 
-# Local-only folder for non-source files
+# Local files that aren't source
 local/
 release-mappings/
 
-# OS
 .DS_Store
 Thumbs.db

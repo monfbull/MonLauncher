@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class HomeTest {
-    /** App-management options offered at the end of every menu. */
     private val manage = listOf(Action.AppInfo, Action.Uninstall)
 
     private val defaults = listOf("kodi", "jellyfin", "youtube", "plex", "netflix", "hbo")
@@ -217,7 +216,7 @@ class HomeTest {
 
         assertEquals(Focus.Grid("vlc"), fromGrid.returnFocus)
         assertEquals(Focus.Dock("b"), fromDock.returnFocus)
-        // Pressing Home on the launcher itself still goes to the dock.
+        // Pressing Home on the launcher still focuses the dock.
         assertEquals(Focus.Dock("b"), fromGrid.homeFocus)
     }
 

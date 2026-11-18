@@ -92,7 +92,6 @@ import mon.launcher.core.Place
 import mon.launcher.core.Tile
 import java.io.File
 
-/** Grid open/close transitions. Tiles, backdrop and dock use staggered timings. */
 private object HomeMotion {
     private val settle = FastOutSlowInEasing
     private val leave = FastOutLinearInEasing
@@ -116,7 +115,6 @@ private object HomeMotion {
 /** Padding that keeps a tile's shadow from being clipped while it fades. */
 private val SHADOW_ROOM = 32.dp
 
-/** Which overlay is showing over the home screen. */
 private enum class Overlay {
     None, Grid, Hidden;
 
@@ -125,14 +123,10 @@ private enum class Overlay {
 
 private fun Home.tilesFor(overlay: Overlay) = if (overlay == Overlay.Hidden) hiddenApps else grid
 
-/**
- * Index of the grid tile (first in the last row) where Left opens the hidden-apps page,
- * or null if the grid is empty.
- */
+/** First tile of the last row. Pressing Left on it opens the hidden apps page. */
 private fun secretIndex(tiles: List<Tile>): Int? =
     if (tiles.isEmpty()) null else (tiles.size - 1) / GRID_COLUMNS * GRID_COLUMNS
 
-/** Target of the open long-press menu. */
 private data class MenuTarget(val tile: Tile, val place: Place)
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -151,7 +145,6 @@ fun HomeScreen(
     wallpapers: WallpaperLibrary,
     onPickWallpaper: (File) -> Unit,
     onWallpapersChanged: () -> Unit,
-    /** Called with the new dock order when a move is confirmed. */
     onReorderDock: (List<String>) -> Unit,
     showWelcome: Boolean,
     onShowWelcome: () -> Unit,
@@ -174,7 +167,7 @@ fun HomeScreen(
     val dockState = rememberLazyListState()
     val scrollMargin = with(LocalDensity.current) { 24.dp.toPx() }
 
-    // On the first frame with data, open the overlay the restore target is in, without animating it.
+    // On the first frame with data, open the focus target's overlay without animating.
     var placed by remember { mutableStateOf(false) }
     if (home != null && !placed) {
         placed = true
@@ -185,7 +178,7 @@ fun HomeScreen(
         }
     }
 
-    // Back does nothing on the home screen itself; overlays add their own handlers.
+    // Back does nothing on the home screen. Overlays add their own handlers.
     BackHandler {}
 
     // Dock move mode: Left/Right reorder, OK saves, Back or Home cancels.
@@ -237,7 +230,6 @@ fun HomeScreen(
         onFocusHandled()
     }
 
-    // When the overlay changes, focus its first tile (or the tile that opened the hidden page), or return to the dock.
     LaunchedEffect(overlay) {
         val current = home ?: return@LaunchedEffect
         if (focusRequest != null) return@LaunchedEffect
@@ -394,7 +386,7 @@ fun HomeScreen(
             if (showWallpapers) {
                 WallpaperManager(
                     library = wallpapers,
-                    // File name of the wallpaper on screen (the version string starts with its path).
+                    // The version string starts with the file path.
                     current = wallpaper?.version?.substringBefore(':')?.let { File(it).name },
                     backdrop = wallpaper?.heavy?.asImage(),
                     onPick = onPickWallpaper,
@@ -436,7 +428,7 @@ private class MinimalScroll(private val margin: Float) : BringIntoViewSpec {
     }
 }
 
-/** Requests focus, retrying for up to 30 frames until the requester is attached. */
+/** Retries for up to 30 frames, until the requester is attached. */
 suspend fun awaitFocus(find: () -> FocusRequester?) {
     repeat(30) {
         val requester = find()
@@ -445,7 +437,6 @@ suspend fun awaitFocus(find: () -> FocusRequester?) {
     }
 }
 
-/** Scrolls [index] into view only if it isn't already on screen. */
 private suspend fun LazyListState.reveal(index: Int) {
     if (index >= 0 && layoutInfo.visibleItemsInfo.none { it.index == index }) scrollToItem(index)
 }
@@ -457,7 +448,6 @@ private suspend fun LazyGridState.reveal(index: Int) {
 @Composable
 private fun Dock(
     tiles: List<Tile>,
-    /** Active dock move, if any. */
     move: DockMove?,
     onMoveStep: (Int) -> Unit,
     onMoveDone: () -> Unit,
@@ -551,15 +541,16 @@ private fun Dock(
 }
 
 /**
- * App grid, with the hidden-apps page to its left. Left on the grid's bottom-left tile opens it;
- * Right at the end of a row or Back returns.
+ * The hidden apps page sits left of the grid.
+ * Left on the first tile of the last row opens it.
+ * Right at the end of a row, or Back, returns.
  */
 @Composable
 private fun AnimatedVisibilityScope.AppsOverlay(
     page: Overlay,
     grid: List<Tile>,
     hidden: List<Tile>,
-    /** Grid index where Left opens the hidden page, or null if nothing is hidden. */
+    /** Null if no apps are hidden. */
     secretIndex: Int?,
     backdrop: ImageBitmap?,
     gridState: LazyGridState,
@@ -613,7 +604,6 @@ private fun AnimatedVisibilityScope.AppsOverlay(
     }
 }
 
-/** A page of app tiles with an optional title. */
 @Composable
 private fun AppsPage(
     title: String?,
@@ -696,7 +686,7 @@ private val imageCache = java.util.WeakHashMap<android.graphics.Bitmap, ImageBit
 
 fun android.graphics.Bitmap.asImage(): ImageBitmap = imageCache.getOrPut(this) { asImageBitmap() }
 
-/** Arrows on the app being moved, shown for each direction it can still go. */
+/** Shows an arrow for each direction the app can still move. */
 @Composable
 private fun MoveArrows(left: Boolean, right: Boolean) {
     val leftAlpha by animateFloatAsState(if (left) 1f else 0f, tween(180), label = "arrowLeft")

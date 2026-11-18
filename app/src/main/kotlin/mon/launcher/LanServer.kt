@@ -12,17 +12,17 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
 /**
- * Minimal HTTP server for pages opened from another device on the local network. Only runs while
- * its panel is open, and stops after [lifetimeMs] regardless.
+ * HTTP server for pages opened from another device on the local network.
+ * Stops after [lifetimeMs] even if nothing calls [stop].
  */
 class LanServer(
     private val lifetimeMs: Long = 10 * 60_000L,
     private val handler: (Request) -> Response,
 ) {
-    /** A request. [path] excludes the query string. */
+    /** [path] has no query string. */
     class Request(val method: String, val path: String, val headers: Map<String, String>, val body: InputStream)
 
-    /** A response. [after] runs once it has been sent. */
+    /** [after] runs after the response is sent. */
     class Response(
         val code: Int,
         val type: String,
@@ -35,15 +35,13 @@ class LanServer(
         }
     }
 
-    /** The open server socket, or null when not running. Cleared by [stop] or when the lifetime ends. */
     @Volatile private var socket: ServerSocket? = null
     private val connections = AtomicInteger(0)
 
-    /** Server address, or null if the server isn't running or there's no network connection. */
     val address: String?
         get() = if (socket == null) null else lanAddress()?.let { "http://$it:$PORT" }
 
-    /** Starts the server. Returns false if the port couldn't be opened, e.g. another app is using it. */
+    /** Returns false if the port can't be opened, e.g. another app uses it. */
     fun start(): Boolean {
         if (socket != null) return true
         val server = runCatching { ServerSocket(PORT).apply { soTimeout = 1000 } }
@@ -65,7 +63,8 @@ class LanServer(
                     runCatching { client.close() }
                     continue
                 }
-                // Errors are contained per connection: browsers open spare connections that time out unused.
+                // Errors stay inside one connection.
+                // Browsers open spare connections that time out unused.
                 thread(isDaemon = true) {
                     try {
                         runCatching { client.use { handle(it) } }
@@ -75,7 +74,8 @@ class LanServer(
                 }
             }
             runCatching { server.close() }
-            // Lets start() run again after the lifetime ends, unless stop() or a new start() already replaced it.
+            // Allows start() again after the lifetime ends.
+            // Skipped if stop() or a new start() replaced the socket.
             if (socket === server) socket = null
         }
         return true

@@ -31,18 +31,14 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
-/** Fill used when there's no wallpaper to blur. */
 private val NO_WALLPAPER_GLASS = Color(0xFF2A2B31)
 
 private val vivid = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.1f) })
 
-/** Reused clip shape for [dockGlass]; see [shadowCard]. */
+/** Reused across draws. See [shadowCard]. */
 private val glassClip = Path()
 
-/**
- * Frosted glass background: the blurred wallpaper aligned to the screen, darkened by [tint],
- * with a top sheen and a thin rim scaled by [rimStrength].
- */
+/** Frosted glass: the blurred wallpaper, lined up with the screen behind this element. */
 fun Modifier.dockGlass(
     backdrop: ImageBitmap?,
     screen: IntSize,
@@ -64,7 +60,7 @@ fun Modifier.dockGlass(
                     colorFilter = vivid,
                 )
             } else {
-                // Without a wallpaper the glass needs an opaque base, or content behind it shows through.
+                // Opaque base, so content behind the glass doesn't show through.
                 drawRect(NO_WALLPAPER_GLASS)
             }
             drawRect(Color.Black.copy(alpha = tint))
@@ -85,7 +81,7 @@ fun Modifier.dockGlass(
 private val graphiteTop = Color(0xFF5C5C63).copy(alpha = 0.38f)
 private val graphiteBottom = Color(0xFF3E3E44).copy(alpha = 0.38f)
 
-/** Tile background. [lit] (0..1) adds the focus sheen and rim. */
+/** [lit] goes from 0 (not focused) to 1 (focused). */
 fun Modifier.tileSurface(lit: Float, corner: Dp, rimBright: Float = 0.32f): Modifier = drawWithContent {
     val radius = CornerRadius(corner.toPx())
     shadowOutside(
@@ -105,19 +101,19 @@ fun Modifier.tileSurface(lit: Float, corner: Dp, rimBright: Float = 0.32f): Modi
     }
 }
 
-// Shadow drawing objects, reused instead of allocated on every frame of every tile. Drawing only
-// happens on the main thread, and the canvas records copies, so sharing them is safe.
+// Shared so nothing is allocated per frame.
+// Safe because drawing only runs on the main thread and the canvas records copies.
 private val shadowCard = Path()
 private val shadowPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
 
-/** Blur filters by radius in whole pixels. Rounding keeps the cache small while focus animates. */
+/** Keyed by whole pixels, to keep the cache small while focus animates. */
 private val shadowBlurs = HashMap<Int, android.graphics.BlurMaskFilter>()
 
 /** Shadow clipped to outside the card, so it doesn't show through translucent tiles. */
 private fun DrawScope.shadowOutside(radius: CornerRadius, blur: Float, dropY: Float, alpha: Float) {
     shadowCard.reset()
     shadowCard.addRoundRect(RoundRect(0f, 0f, size.width, size.height, radius))
-    // A blur radius of 0 is invalid, so the smallest is 1 pixel.
+    // BlurMaskFilter rejects a radius of 0.
     val blurPx = blur.roundToInt().coerceAtLeast(1)
     shadowPaint.color = android.graphics.Color.argb((alpha * 255).toInt(), 0, 0, 0)
     shadowPaint.maskFilter = shadowBlurs.getOrPut(blurPx) {
@@ -130,7 +126,7 @@ private fun DrawScope.shadowOutside(radius: CornerRadius, blur: Float, dropY: Fl
     }
 }
 
-/** Background that only appears when focused, e.g. panel rows. */
+/** Only drawn when focused, e.g. panel rows. */
 fun Modifier.focusSurface(lit: Float, corner: Dp): Modifier = drawWithContent {
     if (lit > 0f) {
         val radius = CornerRadius(corner.toPx())
@@ -150,7 +146,6 @@ fun Modifier.focusSurface(lit: Float, corner: Dp): Modifier = drawWithContent {
     }
 }
 
-/** Glass background for a standalone button, e.g. settings. */
 fun Modifier.buttonGlass(backdrop: ImageBitmap?, screen: IntSize, lit: Float, corner: Dp): Modifier =
     drawWithContent {
         val radius = CornerRadius(corner.toPx())
@@ -162,7 +157,7 @@ fun Modifier.buttonGlass(backdrop: ImageBitmap?, screen: IntSize, lit: Float, co
             drawRoundRect(Color.White.copy(alpha = 0.10f * lit), cornerRadius = radius)
             rim(radius, bright = 0.32f * lit, dim = 0.10f * lit, width = 1.dp.toPx())
         }
-    }.dockGlass(backdrop, screen, corner, rimStrength = 1.6f) // brighter rim than the dock, as it sits alone on the wallpaper
+    }.dockGlass(backdrop, screen, corner, rimStrength = 1.6f) // brighter rim: it sits alone on the wallpaper
 
 /** Rim highlight, brightest at the top-left. */
 private fun DrawScope.rim(radius: CornerRadius, bright: Float, dim: Float, width: Float) {

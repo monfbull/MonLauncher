@@ -8,18 +8,13 @@ import androidx.core.graphics.drawable.toBitmap
 import mon.launcher.core.LogoCatalog
 import org.xmlpull.v1.XmlPullParser
 
-/** An installed icon pack. */
 data class IconPack(val packageName: String, val label: String)
 
-/**
- * Reads icon packs installed on the device, using the standard appfilter format (app activity
- * to drawable name). Nothing is copied into the launcher.
- */
+/** Reads installed icon packs. Each pack's appfilter.xml maps app activities to image names. */
 class IconPacks(private val context: Context) {
     private val pm = context.packageManager
     private var cached: Pair<String, LogoCatalog>? = null
 
-    /** Installed icon packs, sorted by name. */
     fun installed(): List<IconPack> =
         THEME_ACTIONS.flatMap { action -> pm.queryIntentActivities(Intent(action), 0) }
             .map { it.activityInfo.applicationInfo }
@@ -30,14 +25,17 @@ class IconPacks(private val context: Context) {
 
     fun isInstalled(packageName: String) = runCatching { pm.getPackageInfo(packageName, 0) }.isSuccess
 
-    /** The pack to use: the user's choice, or the Projectivy pack if installed and nothing was chosen. */
+    /**
+     * [choice] null means never chosen: use the Projectivy pack if installed.
+     * Empty means no pack.
+     */
     fun effective(choice: String?): String? = when {
         choice == null -> PROJECTIVY_PACK.takeIf(::isInstalled)
         choice.isEmpty() -> null
         else -> choice.takeIf(::isInstalled)
     }
 
-    /** App package to image name for [pack]. Cached until the pack is updated. */
+    /** Cached until the pack is updated. */
     fun catalog(pack: String?): LogoCatalog {
         if (pack == null) return LogoCatalog()
         val version = runCatching { pm.getPackageInfo(pack, 0).lastUpdateTime }.getOrNull() ?: return LogoCatalog()
@@ -50,7 +48,6 @@ class IconPacks(private val context: Context) {
         return catalog
     }
 
-    /** Loads one of [pack]'s images, trimmed to its content. */
     fun load(pack: String, name: String): Bitmap? {
         val res = pm.getResourcesForApplication(pack)
         val id = res.getIdentifier(name, "drawable", pack).takeIf { it != 0 } ?: return null
@@ -61,10 +58,7 @@ class IconPacks(private val context: Context) {
         return trimTransparent(drawable.toBitmap(width, height))
     }
 
-    /**
-     * Parses appfilter. If several activities of an app are mapped, the launch activity wins,
-     * else the first entry.
-     */
+    /** If an app has several entries, use the one for its launch activity, else the first. */
     private fun readAppFilter(pack: String): Map<String, String> {
         val res = pm.getResourcesForApplication(pack)
         val id = res.getIdentifier("appfilter", "xml", pack)
@@ -89,11 +83,10 @@ class IconPacks(private val context: Context) {
     }
 
     companion object {
-        /** Projectivy Icon Pack, used by default when installed. */
         const val PROJECTIVY_PACK = "dev.projectivy.blueprint.app"
         const val PROJECTIVY_PACK_PAGE = "https://github.com/SicMundus86/ProjectivyIconPack"
 
-        /** Intent actions icon packs declare for launchers. */
+        /** Icon packs declare these intent actions so launchers can find them. */
         private val THEME_ACTIONS = listOf(
             "org.adw.launcher.THEMES",
             "com.novalauncher.THEME",

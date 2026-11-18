@@ -16,20 +16,20 @@ import java.io.File
 import java.io.InputStream
 
 /**
- * Wallpapers stored in app storage, plus images in Download that can be imported.
- * Using app storage means deleting needs no extra permission; uninstalling removes them.
+ * Wallpapers live in app storage, so deleting needs no extra permission.
+ * Uninstalling the launcher removes them.
  */
 class WallpaperLibrary(private val context: Context) {
     val folder = File(context.filesDir, "wallpapers")
-    // Deprecated for scoped storage, but this reads files directly with the photo permission, so
-    // the real path is what's needed. Unlike a hardcoded /sdcard/Download, it's correct on every device.
+    // Deprecated, but reading files directly with the photo permission needs the real path.
+    // A hardcoded /sdcard/Download is wrong on some devices.
     @Suppress("DEPRECATION")
     private val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     private val prefs = context.getSharedPreferences("wallpapers", Context.MODE_PRIVATE)
     private val thumbDir = File(context.cacheDir, "wallpaper-thumbs")
     private val thumbs = LruCache<String, ImageBitmap>(48)
 
-    /** On first run, adds the bundled default wallpaper so the library isn't empty. */
+    /** Only runs once, so a deleted default doesn't come back. */
     fun seedDefault() {
         if (prefs.getBoolean(SEEDED, false)) return
         if (list().isEmpty()) {
@@ -43,10 +43,10 @@ class WallpaperLibrary(private val context: Context) {
         prefs.edit().putBoolean(SEEDED, true).apply()
     }
 
-    /** Library images, newest first. */
+    /** Newest first. */
     fun list(): List<File> = images(folder, depth = 1).sortedByDescending { it.lastModified() }
 
-    /** Images in Download (and its subfolders) not already in the library. */
+    /** Skips images already in the library (same name and size). */
     fun inDownloads(): List<File> {
         val have = list().map { it.name to it.length() }.toSet()
         return images(downloads, depth = 3)
@@ -54,13 +54,9 @@ class WallpaperLibrary(private val context: Context) {
             .sortedByDescending { it.lastModified() }
     }
 
-    /** Copies an image into the library under its own name, made safe and unique. */
     fun import(file: File): File = file.inputStream().use { save(file.name, it) }
 
-    /**
-     * Saves [data] to the library under a safe, unique version of [name]. Throws, and keeps nothing,
-     * if the result isn't a readable image.
-     */
+    /** Throws and keeps nothing if [data] is over [limitBytes] or isn't a readable image. */
     fun save(name: String, data: InputStream, limitBytes: Long = MAX_BYTES): File {
         folder.mkdirs()
         val target = uniqueName(safeName(name))
@@ -84,13 +80,9 @@ class WallpaperLibrary(private val context: Context) {
         }
     }
 
-    /** Result of [exportToDownloads]. */
     enum class Export { Saved, AlreadyThere, Failed }
 
-    /**
-     * Saves a copy of a library image to the shared Download folder, so it survives uninstalling
-     * the launcher. Does nothing if an identical copy (same name and size) is already there.
-     */
+    /** A copy in Download survives uninstalling the launcher. */
     fun exportToDownloads(file: File): Export {
         if (File(downloads, file.name).let { it.exists() && it.length() == file.length() }) return Export.AlreadyThere
         return if (copyToDownloads(file)) Export.Saved else Export.Failed
@@ -121,10 +113,10 @@ class WallpaperLibrary(private val context: Context) {
         else -> "image/jpeg"
     }
 
-    /** Deletes a library image. Returns true if it no longer exists. */
+    /** Only deletes files in the library folder. Returns true if the file is gone. */
     fun delete(file: File): Boolean = file.parentFile == folder && (file.delete() || !file.exists())
 
-    /** A downscaled preview, cached on disk and in memory. */
+    /** Cached on disk and in memory. */
     suspend fun thumbnail(file: File): ImageBitmap? = try {
         loadThumbnail(file)
     } catch (e: CancellationException) {
@@ -156,8 +148,8 @@ class WallpaperLibrary(private val context: Context) {
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
         val sample = sampleSize(bounds.outWidth, bounds.outHeight, THUMB_WIDTH, 1)
         val decoded = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return null
-        // Images taller than square are cropped to their centre square, so a very tall image can't
-        // scale up to a huge thumbnail. Thumbnails are shown cropped to 16:9, so nothing visible is lost.
+        // Crop tall images to a center square, so a very tall image doesn't make a huge thumbnail.
+        // Thumbnails are shown at 16:9, so nothing visible is lost.
         val source = if (decoded.height > decoded.width) {
             Bitmap.createBitmap(decoded, 0, (decoded.height - decoded.width) / 2, decoded.width, decoded.width)
         } else {

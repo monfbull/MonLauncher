@@ -1,20 +1,18 @@
 package mon.launcher.core
 
-/** A launchable app. */
 data class InstalledApp(val packageName: String, val label: String)
 
-/** Persisted launcher state. */
 data class SavedState(
     val dock: List<String> = emptyList(),
     val hidden: Set<String> = emptySet(),
-    /** Last app launched from the dock; Home focuses it. */
+    /** Last app opened from the dock. Pressing Home focuses it. */
     val lastLaunched: String? = null,
-    /** Last app launched and where from; returning from it focuses that tile. */
+    /** Last app opened, and where from. Coming back from it focuses that tile. */
     val lastOpened: String? = null,
     val lastOpenedFrom: Place? = null,
 )
 
-/** Logo image names by package. [custom] overrides [pack]. */
+/** Logo image names by package name. [custom] wins over [pack]. */
 class LogoCatalog(
     private val custom: Map<String, String> = emptyMap(),
     private val pack: Map<String, String> = emptyMap(),
@@ -26,28 +24,23 @@ class LogoCatalog(
 }
 
 sealed interface Logo {
-    /** An image by name, from the icon pack or a custom override. */
     data class Asset(val name: String) : Logo
-    /** The app's own artwork (banner or icon). */
+    /** The app's own banner or icon. */
     data object AppIcon : Logo
 }
 
-/** Where a tile is shown. */
 enum class Place { Dock, Grid, HiddenList }
 
-/** Long-press menu actions. [AppInfo] and [Uninstall] are handled by the system. */
+/** Menu actions. The system handles [AppInfo] and [Uninstall]. */
 enum class Action { AddToDock, RemoveFromDock, Move, Hide, Unhide, AppInfo, Uninstall }
 
-/**
- * A dock move in progress. [order] is the dock as displayed; nothing is saved until
- * [Home.withDockOrder] is called.
- */
+/** Nothing is saved until [Home.withDockOrder] is called. */
 data class DockMove(val packageName: String, val order: List<String>) {
     private val index get() = order.indexOf(packageName)
     val canMoveLeft: Boolean get() = index > 0
     val canMoveRight: Boolean get() = index in 0 until order.lastIndex
 
-    /** Moves one place left (-1) or right (+1). No change at the ends. */
+    /** Moves one place left (-1) or right (+1). Does nothing at the ends. */
     fun step(by: Int): DockMove {
         val i = index
         val j = i + by
@@ -56,21 +49,18 @@ data class DockMove(val packageName: String, val order: List<String>) {
     }
 }
 
-/** Where focus goes after a change. */
 sealed interface Focus {
     data class Dock(val packageName: String) : Focus
     data class Grid(val packageName: String) : Focus
     data class Hidden(val packageName: String) : Focus
-    /** The first grid item, used when the dock is empty. */
     data object GridStart : Focus
 }
 
-/** Result of an action: the new state and the focus target. */
 data class Change(val home: Home, val focus: Focus)
 
 data class Tile(val packageName: String, val label: String, val logo: Logo)
 
-/** Launcher state and the rules for changing it, independent of the UI. */
+/** Launcher state and the rules that change it. No UI code. */
 class Home private constructor(
     private val installed: Map<String, InstalledApp>,
     val saved: SavedState,
@@ -86,18 +76,15 @@ class Home private constructor(
 
     val showHiddenEntry: Boolean get() = hiddenApps.isNotEmpty()
 
-    /**
-     * Rebuilds against [installed], dropping uninstalled apps, optionally with new [logos].
-     * Never adds apps to the dock.
-     */
+    /** Drops apps that are no longer installed. Never adds apps to the dock. */
     fun reconcile(installed: List<InstalledApp>, logos: LogoCatalog = this.logos): Home = create(installed, saved, logos)
 
-    /** Focus target when Home is pressed on the launcher. */
+    /** Focus when Home is pressed while the launcher is open. */
     val homeFocus: Focus
         get() = (saved.lastLaunched?.takeIf { it in saved.dock } ?: saved.dock.firstOrNull())
             ?.let { Focus.Dock(it) } ?: Focus.GridStart
 
-    /** Focus target when returning from an app: the tile it was launched from, else [homeFocus]. */
+    /** Focus when coming back from an app: the tile it was opened from, else [homeFocus]. */
     val returnFocus: Focus
         get() {
             val app = saved.lastOpened ?: return homeFocus
@@ -109,13 +96,12 @@ class Home private constructor(
             } ?: homeFocus
         }
 
-    /** Records a launch from [place]. */
     fun launched(packageName: String, place: Place): Home {
         val opened = saved.copy(lastOpened = packageName, lastOpenedFrom = place)
         return Home(installed, if (place == Place.Dock) opened.copy(lastLaunched = packageName) else opened, logos)
     }
 
-    /** Menu actions for [packageName] at [place], in display order. */
+    /** In display order. */
     fun menu(packageName: String, place: Place): List<Action> = launcherActions(packageName, place) + manageActions
 
     private val manageActions = listOf(Action.AppInfo, Action.Uninstall)
@@ -129,7 +115,6 @@ class Home private constructor(
         Place.HiddenList -> listOf(Action.Unhide)
     }
 
-    /** Applies [action] to [packageName] at [place]. */
     fun perform(action: Action, packageName: String, place: Place): Change {
         val dock = saved.dock
         return when (action) {
@@ -139,7 +124,7 @@ class Home private constructor(
                 val focus = if (place == Place.Dock) dockNeighbour(packageName) else Focus.Grid(packageName)
                 Change(with(dock = newDock), focus)
             }
-            // Move mode is handled by the UI; see [startMove].
+            // The UI runs the move. See [startMove].
             Action.Move -> Change(this, Focus.Dock(packageName))
             Action.Hide -> Change(with(dock = dock - packageName, hidden = saved.hidden + packageName), gridNeighbour(packageName))
             Action.Unhide -> Change(with(hidden = saved.hidden - packageName), Focus.Grid(packageName))
@@ -147,21 +132,20 @@ class Home private constructor(
         }
     }
 
-    /** Focus after [packageName] leaves the grid: next app, else previous, else the grid start. */
+    /** Next app, else previous app, else the grid start. */
     private fun gridNeighbour(packageName: String): Focus {
         val i = grid.indexOfFirst { it.packageName == packageName }
         val neighbour = grid.getOrNull(i + 1) ?: grid.getOrNull(i - 1)
         return neighbour?.let { Focus.Grid(it.packageName) } ?: Focus.GridStart
     }
 
-    /** Starts a dock move for [packageName]. */
     fun startMove(packageName: String) = DockMove(packageName, saved.dock)
 
-    /** Applies a dock order from a [DockMove]. Ignored unless it contains exactly the current dock apps. */
+    /** Does nothing unless [order] has exactly the current dock apps. */
     fun withDockOrder(order: List<String>): Home =
         if (order.sorted() == saved.dock.sorted()) with(dock = order) else this
 
-    /** Focus after [packageName] leaves the dock: next app, else previous, else the grid. */
+    /** Next app, else previous app, else the grid start. */
     private fun dockNeighbour(packageName: String): Focus {
         val i = saved.dock.indexOf(packageName)
         val neighbour = saved.dock.getOrNull(i + 1) ?: saved.dock.getOrNull(i - 1)
@@ -174,12 +158,12 @@ class Home private constructor(
     private fun tile(app: InstalledApp) = Tile(app.packageName, app.label, logos.logoFor(app))
 
     companion object {
-        /** Apps placed in the dock on first run. */
         const val FIRST_RUN_DOCK_SIZE = 6
 
         /**
-         * Starts from [saved] state, or on first run (null) with a dock of the installed [defaultDock]
-         * apps in order, filled up to [FIRST_RUN_DOCK_SIZE] from the rest of the app list.
+         * [saved] is null on first run.
+         * Then the dock gets the installed [defaultDock] apps, then the first apps A to Z.
+         * Up to [FIRST_RUN_DOCK_SIZE] apps in total.
          */
         fun start(
             installed: List<InstalledApp>,

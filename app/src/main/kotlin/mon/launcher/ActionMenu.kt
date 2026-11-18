@@ -7,13 +7,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
 import mon.launcher.core.Action
 
-/** Long-press menu for an app. */
+/** Menu shown when OK is held on an app. */
 @Composable
 fun ActionMenu(title: String, actions: List<Action>, onDismiss: () -> Unit, onPick: (Action) -> Unit) {
     ChoiceMenu(title, actions.map { it.label() }, onDismiss) { onPick(actions[it]) }
 }
 
-/** A menu of [choices]; [onPick] receives the chosen index. */
+/** [onPick] gets the index of the chosen item. */
 @Composable
 fun ChoiceMenu(title: String, choices: List<String>, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
     GlassPanel(title, width = 320.dp, onDismiss = onDismiss) {

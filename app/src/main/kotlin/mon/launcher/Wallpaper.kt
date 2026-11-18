@@ -5,8 +5,9 @@ import android.graphics.BitmapFactory
 import java.io.File
 
 /**
- * The wallpaper at 1920x1080 plus small pre-blurred copies: [glass] for the dock and settings
- * button, [heavy] for the grid, panels and upload page.
+ * [sharp] is 1920x1080.
+ * [glass] is a light blur, for the dock and settings button.
+ * [heavy] is a strong blur, for the grid, panels and upload page.
  */
 class WallpaperImages(val sharp: Bitmap, val glass: Bitmap, val heavy: Bitmap, val version: String)
 
@@ -14,16 +15,15 @@ class WallpaperImages(val sharp: Bitmap, val glass: Bitmap, val heavy: Bitmap, v
 fun wallpaperVersion(file: File) = "${file.path}:${file.lastModified()}:${file.length()}"
 
 /**
- * Most pixels decoded from any one image: six 1080p screens, about 50 MB in memory. Enough for a
- * 12 MP portrait photo to decode at full size, so it isn't softened before cropping.
+ * Six 1080p screens, about 50 MB.
+ * Lets a 12 MP portrait photo decode at full size, so it stays sharp after cropping.
  */
 private const val MAX_DECODE_PIXELS = 6L * 1920 * 1080
 
 /**
- * Power-of-two sample size for decoding a [width]x[height] image. Shrinks while both sides stay at
- * least [minWidth]x[minHeight], then further until the result has at most [MAX_DECODE_PIXELS].
- * The second step is for very long, thin images (e.g. 60000x1000), which the first can't shrink:
- * decoded at full size they'd need hundreds of MB.
+ * Doubles the sample size while both sides stay at least [minWidth]x[minHeight].
+ * Then keeps doubling until the image has at most [MAX_DECODE_PIXELS].
+ * The second step is for very long, thin images (e.g. 60000x1000).
  */
 internal fun sampleSize(width: Int, height: Int, minWidth: Int, minHeight: Int): Int {
     var sample = 1
@@ -39,12 +39,12 @@ object Wallpaper {
     private const val WIDTH = 1920
     private const val HEIGHT = 1080
 
-    /** Number of processed wallpapers kept in the cache. */
+    /** Wallpapers kept in the cache. */
     private const val CACHED = 4
 
     /**
-     * Loads [file] at 1920x1080, or null if it can't be read. Decoding and blurring a large photo
-     * takes a couple of seconds, so results are cached under [cacheRoot] until the file changes.
+     * Returns null if [file] can't be read.
+     * Results are cached under [cacheRoot]. Decoding and blurring a large photo takes seconds.
      */
     fun load(cacheRoot: File, file: File): WallpaperImages? {
         if (!file.canRead()) return null
@@ -59,7 +59,6 @@ object Wallpaper {
         return fresh.toImages(version)
     }
 
-    /** Deletes all but the most recently used cache folders. */
     private fun prune(cacheRoot: File) {
         cacheRoot.listFiles().orEmpty()
             .filter { it.isDirectory }
@@ -112,7 +111,7 @@ object Wallpaper {
         )
     }
 
-    /** Downscales then blurs; drawing it stretched smooths it further. */
+    /** Kept small: drawing it stretched blurs it more. */
     private fun smallBlur(src: Bitmap, shrink: Int, radius: Int): Bitmap {
         val small = Bitmap.createScaledBitmap(src, src.width / shrink, src.height / shrink, true)
         return boxBlur(boxBlur(small, radius), radius)
@@ -120,14 +119,13 @@ object Wallpaper {
 
     private fun centerCrop(src: Bitmap, width: Int, height: Int): Bitmap {
         val scale = maxOf(width.toFloat() / src.width, height.toFloat() / src.height)
-        // At least one pixel: for extreme proportions the crop on the short side rounds down to 0.
+        // At least 1 pixel: very thin images can round down to 0.
         val w = (width / scale).toInt().coerceIn(1, src.width)
         val h = (height / scale).toInt().coerceIn(1, src.height)
         val cropped = Bitmap.createBitmap(src, (src.width - w) / 2, (src.height - h) / 2, w, h)
         return Bitmap.createScaledBitmap(cropped, width, height, true)
     }
 
-    /** Separable box blur. */
     private fun boxBlur(src: Bitmap, radius: Int): Bitmap {
         val w = src.width
         val h = src.height

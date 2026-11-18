@@ -14,10 +14,7 @@ import mon.launcher.core.InstalledApp
 import mon.launcher.core.Place
 import mon.launcher.core.SavedState
 
-/**
- * Preferred dock apps on first run, in order. Installed ones are used; the rest of the six places
- * are filled from the app list.
- */
+/** First-run dock, in order. Apps that aren't installed are skipped. */
 val DEFAULT_DOCK = listOf(
     "com.google.android.youtube.tv",
     "com.netflix.ninja",
@@ -31,7 +28,6 @@ val DEFAULT_DOCK = listOf(
     "com.spotify.tv.android",
 )
 
-/** Queries and launches installed apps. */
 class AppSource(private val context: Context) {
     private val pm = context.packageManager
 
@@ -58,12 +54,10 @@ class AppSource(private val context: Context) {
             .onFailure { logProblem("Couldn't launch $packageName", it) }
     }
 
-    /** Opens the system App info screen for [packageName]. */
     fun openAppInfo(packageName: String) = start(
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")),
     )
 
-    /** Starts the system uninstall flow, which asks for confirmation. */
     fun uninstall(packageName: String) = start(Intent(Intent.ACTION_DELETE, Uri.parse("package:$packageName")))
 
     /** Starts a system screen in a new task so Back returns to the launcher. */
@@ -73,10 +67,7 @@ class AppSource(private val context: Context) {
         }.onFailure { logProblem("Couldn't open system screen ${intent.action}", it) }
     }
 
-    /**
-     * The app's icon at high density, trimmed to its content. For adaptive icons only the foreground
-     * layer is used, so the tile's own background shows behind it.
-     */
+    /** Adaptive icons use only the foreground layer, so the tile background shows behind it. */
     fun iconArtwork(packageName: String, transparentOnly: Boolean = false): Bitmap? = safely {
         val info = pm.getApplicationInfo(packageName, 0)
         val drawable = runCatching {
@@ -88,7 +79,6 @@ class AppSource(private val context: Context) {
         trimTransparent(art.toBitmap(ICON_SIZE, ICON_SIZE))
     }
 
-    /** The app's TV banner (android:banner), or null if it has none. */
     fun banner(packageName: String): Bitmap? = safely {
         val component = (pm.getLeanbackLaunchIntentForPackage(packageName) ?: pm.getLaunchIntentForPackage(packageName))?.component
         val drawable = component?.let { runCatching { pm.getActivityBanner(it) }.getOrNull() }
@@ -127,7 +117,6 @@ fun trimTransparent(src: Bitmap): Bitmap {
     return Bitmap.createBitmap(src, left, top, right - left + 1, bottom - top + 1)
 }
 
-/** Persists [SavedState] in shared preferences. */
 class StateStore(context: Context) {
     private val prefs = context.getSharedPreferences("home", Context.MODE_PRIVATE)
 
@@ -152,12 +141,11 @@ class StateStore(context: Context) {
             .apply()
     }
 
-    /** Records that an app was launched from the launcher. */
     fun markOpened() = prefs.edit().putLong(OPENED_AT, System.currentTimeMillis()).putBoolean(RETURN_PENDING, true).apply()
 
     /**
-     * True until the launcher is shown again after a launch; the next return then restores focus
-     * to the launched app's tile.
+     * True after a launch until the launcher is shown again.
+     * Used to focus the launched app's tile on return.
      */
     fun returnPending(): Boolean = prefs.getBoolean(RETURN_PENDING, false)
 
@@ -165,10 +153,8 @@ class StateStore(context: Context) {
         if (returnPending()) prefs.edit().putBoolean(RETURN_PENDING, false).apply()
     }
 
-    /** Time of the last launch from the launcher, or 0. */
     fun openedAt(): Long = prefs.getLong(OPENED_AT, 0L)
 
-    /** Whether an app was launched since the last boot. */
     fun openedSinceBoot(): Boolean {
         val bootedAt = System.currentTimeMillis() - SystemClock.elapsedRealtime()
         return openedAt() > bootedAt

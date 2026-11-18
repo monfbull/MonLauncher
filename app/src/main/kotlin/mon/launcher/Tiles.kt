@@ -47,10 +47,9 @@ import mon.launcher.core.Tile
 
 private val tileShape = RoundedCornerShape(TILE_CORNER)
 
-/** Focus within this time of a tile appearing is initial focus and isn't animated. */
+/** Focus within this time of a tile appearing snaps instead of animating. */
 private const val INITIAL_FOCUS_MS = 600L
 
-/** An app tile showing its logo, icon or banner. */
 @Composable
 fun AppTile(
     tile: Tile,
@@ -84,7 +83,6 @@ private fun TileContent(tile: Tile, art: TileArt?, size: DpSize) {
     }
 }
 
-/** A tile showing only text. */
 @Composable
 fun TextTile(
     text: String,
@@ -101,7 +99,7 @@ fun TextTile(
     }
 }
 
-/** A photo filling the tile, e.g. a wallpaper thumbnail. [image] is null while loading. */
+/** [image] is null while loading. */
 @Composable
 fun PhotoTile(
     image: ImageBitmap?,
@@ -120,7 +118,6 @@ fun PhotoTile(
     }
 }
 
-/** The settings button in the top-left corner. */
 @Composable
 fun SettingsButton(
     backdrop: ImageBitmap?,
@@ -140,8 +137,9 @@ fun SettingsButton(
 }
 
 /**
- * Focusable tile: scales up and lifts when focused, dips while OK is held, and opens the long-press
- * menu when OK is held long enough.
+ * Grows when focused.
+ * Shrinks a little while OK is held.
+ * Calls [onLongPress] if OK is held long enough.
  */
 @Composable
 private fun FocusableTile(
@@ -152,7 +150,7 @@ private fun FocusableTile(
     modifier: Modifier = Modifier,
     corner: Dp = TILE_CORNER,
     opensApp: Boolean = false,
-    /** Background drawing, given the focus amount (0..1). */
+    /** [lit] goes from 0 (not focused) to 1 (focused). */
     surface: Modifier.(lit: Float) -> Modifier = { lit -> tileSurface(lit, corner) },
     content: @Composable BoxScope.() -> Unit,
 ) {
@@ -160,7 +158,6 @@ private fun FocusableTile(
     var focused by remember { mutableStateOf(false) }
     var pressing by remember { mutableStateOf(false) }
     var longPressed by remember { mutableStateOf(false) }
-    // Initial focus when a screen opens snaps instead of animating.
     val shownAt = remember { SystemClock.uptimeMillis() }
     val litAnim = remember { Animatable(0f) }
     LaunchedEffect(focused) {

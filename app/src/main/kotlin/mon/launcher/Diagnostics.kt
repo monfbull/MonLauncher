@@ -19,7 +19,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-/** Installs the crash recorder at startup. */
 class MonApp : Application() {
     override fun onCreate() {
         super.onCreate()
@@ -28,8 +27,8 @@ class MonApp : Application() {
 }
 
 /**
- * Saves crash reports to app storage and detects crash loops. As the home app, a launcher that
- * crashes on start would leave the TV unusable, so a loop shows a recovery screen instead.
+ * A home app that crashes on start makes the TV unusable.
+ * So after a crash loop, a recovery screen is shown instead.
  */
 object CrashLog {
     private const val KEEP = 10
@@ -45,20 +44,22 @@ object CrashLog {
         }
     }
 
-    /** Saved crash reports, newest first. */
+    /** Newest first. */
     fun reports(context: Context): List<File> =
         dir(context).listFiles().orEmpty().filter { it.name.endsWith(".txt") }.sortedByDescending { it.name }
 
-    /** Time of the most recent crash, or 0. */
     fun lastCrashAt(context: Context): Long = reports(context).firstOrNull()?.let(::timeOf) ?: 0L
 
-    /** True if there were at least [LOOP_CRASHES] crashes within [LOOP_WINDOW_MS] and since the last [acknowledge]. */
+    /**
+     * At least [LOOP_CRASHES] crashes in the last [LOOP_WINDOW_MS].
+     * Crashes before the last [acknowledge] don't count.
+     */
     fun inCrashLoop(context: Context): Boolean {
         val since = maxOf(System.currentTimeMillis() - LOOP_WINDOW_MS, prefs(context).getLong(ACKNOWLEDGED, 0L))
         return reports(context).count { timeOf(it) > since } >= LOOP_CRASHES
     }
 
-    /** Stops counting crashes up to now toward a crash loop. */
+    /** Crashes before now no longer count toward a crash loop. */
     fun acknowledge(context: Context) {
         prefs(context).edit().putLong(ACKNOWLEDGED, System.currentTimeMillis()).commit()
     }
@@ -89,17 +90,14 @@ fun logProblem(what: String, error: Throwable? = null) {
     Log.w("MonLauncher", what, error)
 }
 
-/** App name, version name and version code. */
 fun appVersion(context: Context): String {
     val info = runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull()
     return "MonLauncher ${info?.versionName ?: "?"} (${info?.longVersionCode ?: "?"})"
 }
 
-/** The version name. */
 fun appVersionName(context: Context): String =
     runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
 
-/** Builds the diagnostics report: app and device details, recent exits, crashes and recent log. */
 object DiagnosticsReport {
     fun build(context: Context): String = buildString {
         appendLine(appVersion(context))
@@ -128,7 +126,7 @@ object DiagnosticsReport {
         appendLine(recentLog())
     }
 
-    /** Output mode and UI size. TV devices often render the UI at 1080p and upscale it. */
+    /** TVs often draw the UI at 1080p and upscale it, so both sizes are reported. */
     private fun screen(context: Context): String {
         val metrics = context.resources.displayMetrics
         val ui = "${metrics.widthPixels}x${metrics.heightPixels} @ ${metrics.densityDpi} dpi"
@@ -139,10 +137,7 @@ object DiagnosticsReport {
         return "${mode.physicalWidth}x${mode.physicalHeight} @ $hz Hz (UI drawn at $ui)"
     }
 
-    /**
-     * Recent process exits as recorded by the system, including ANRs and low-memory kills,
-     * which the crash handler doesn't see. ANRs include the main thread's stack.
-     */
+    /** Includes ANRs and low-memory kills, which the crash handler doesn't see. */
     private fun recentExits(context: Context): String = runCatching {
         val exits = context.getSystemService(ActivityManager::class.java)
             .getHistoricalProcessExitReasons(context.packageName, 0, 8)
@@ -175,7 +170,6 @@ object DiagnosticsReport {
         else -> "Unknown ($reason)"
     }
 
-    /** Main thread stack from an ANR trace. */
     private fun frozenStack(exit: ApplicationExitInfo): String = runCatching {
         val lines = exit.traceInputStream?.bufferedReader()?.use { it.readLines() } ?: return@runCatching "  (no trace)"
         val start = lines.indexOfFirst { it.startsWith("\"main\"") }
@@ -187,10 +181,7 @@ object DiagnosticsReport {
         context.getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_HOME)
     }.getOrDefault(false)
 
-    /**
-     * Recent warnings and errors from this process. Lines with install paths are removed, since they
-     * would list the user's other installed apps.
-     */
+    /** Drops lines with install paths, which would list the user's other apps. */
     fun recentLog(): String = runCatching {
         val process = ProcessBuilder("logcat", "-d", "-t", "300", "--pid=${Process.myPid()}", "*:W")
             .redirectErrorStream(true).start()
@@ -202,7 +193,7 @@ object DiagnosticsReport {
 
     private val PRIVATE = listOf("/data/app/", "ApkAssets")
 
-    /** Routine warnings logged on every start. */
+    /** Harmless warnings logged on every start. */
     private val NOISE = listOf(
         "OnBackInvokedCallback", "enableOnBackInvokedCallback", "Unable to match the desired swap behavior",
         "Not starting debugger", "Codec2Client: query -- param skipped",

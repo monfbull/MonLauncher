@@ -17,8 +17,8 @@ android {
         versionCode = 2
         versionName = "0.1.0-beta.2"
     }
-    // Release signing config, read from keystore.properties (not in the repo).
-    // All releases must use the same key, or they won't install as updates.
+    // Reads keystore.properties (not in the repo).
+    // Every release must use the same key, or it won't install as an update.
     val keystore = rootProject.file("keystore.properties").takeIf { it.exists() }
         ?.let { file -> Properties().apply { file.inputStream().use { load(it) } } }
     signingConfigs {
@@ -33,8 +33,8 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Null without keystore.properties. Release tasks then fail (see the end of this file),
-            // while debug builds still work for anyone who clones the repo.
+            // Null without keystore.properties.
+            // Debug builds still work. Release builds fail (see the end of this file).
             signingConfig = signingConfigs.findByName("release")
         }
     }
@@ -55,16 +55,16 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.activity:activity-compose:1.9.3")
-    // Used directly by the app, so declared here rather than relied on through activity-compose.
-    // These are minimum versions: if activity-compose brings in newer ones, Gradle uses those.
+    // The app uses these directly, so they're declared here.
+    // They are minimum versions. Gradle uses newer ones if activity-compose pulls them in.
     implementation("androidx.core:core-ktx:1.13.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.google.zxing:core:3.5.3") // QR codes
 }
 
-// Save R8's mapping for each release under release-mappings/<version>/ (gitignored; attach it to
-// the GitHub release). It's needed to decode crash traces from that build.
+// Saves R8's mapping to release-mappings/<version>/ (gitignored).
+// Attach it to the GitHub release: it's needed to decode crash traces from that build.
 tasks.matching { it.name == "assembleRelease" }.configureEach {
     doLast {
         val version = "${android.defaultConfig.versionName}-${android.defaultConfig.versionCode}"
@@ -75,8 +75,7 @@ tasks.matching { it.name == "assembleRelease" }.configureEach {
     }
 }
 
-// Release builds need the signing key. preReleaseBuild runs before every other release task, so
-// this fails before anything is built, instead of producing an unsigned APK.
+// Fails before any release task runs, instead of building an unsigned APK.
 tasks.matching { it.name == "preReleaseBuild" }.configureEach {
     doFirst {
         if (!rootProject.file("keystore.properties").exists()) {

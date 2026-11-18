@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
 
-/** Settings → Icon pack. Without the Projectivy pack installed, shows where to get it. */
 @Composable
 fun IconPackPanel(iconPacks: IconPacks, current: String?, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
     val packs = remember { iconPacks.installed() }

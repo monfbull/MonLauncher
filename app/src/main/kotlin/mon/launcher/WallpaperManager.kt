@@ -74,10 +74,7 @@ private val titleStyle = TextStyle(color = Color.White, fontFamily = Inter, font
 private val sectionStyle = TextStyle(color = Color.White.copy(alpha = 0.7f), fontFamily = Inter, fontWeight = FontWeight.Medium, fontSize = 15.sp)
 private val noteStyle = PanelText.note
 
-/**
- * Settings → Wallpaper: pick from the library or Download, upload from a phone, or long-press to
- * save a copy or delete. [current] is the file name in use; [onChanged] is called when files are added or removed.
- */
+/** [current] is the file name in use. [onChanged] runs when files are added or removed. */
 @Composable
 fun WallpaperManager(
     library: WallpaperLibrary,
@@ -259,8 +256,7 @@ private fun Thumbnail(
     val image by produceState<ImageBitmap?>(null, file) { value = library.thumbnail(file) }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         PhotoTile(image, file.name, THUMB, requester, onClick, onLongPress)
-        // The current wallpaper is labelled below the thumbnail rather than marked on it, so the label
-        // isn't confused with focus.
+        // Label below the thumbnail, not a mark on it, so it isn't confused with focus.
         Row(
             Modifier.height(CAPTION).padding(top = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -274,7 +270,6 @@ private fun Thumbnail(
     }
 }
 
-/** Renders [text] as a QR code with a white quiet zone. */
 @Composable
 fun QrCode(text: String, modifier: Modifier = Modifier) {
     val matrix = remember(text) {
@@ -284,7 +279,7 @@ fun QrCode(text: String, modifier: Modifier = Modifier) {
         )
     }
     Canvas(modifier.clip(RoundedCornerShape(TILE_CORNER)).background(Color.White)) {
-        val quiet = 2 // quiet zone, in modules
+        val quiet = 2 // white border, in QR cells
         val cells = matrix.width + quiet * 2
         val cell = size.minDimension / cells
         for (y in 0 until matrix.height) for (x in 0 until matrix.width) {
@@ -295,7 +290,6 @@ fun QrCode(text: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Runs the upload server while shown. It stops after one upload or when the panel closes. */
 @Composable
 private fun UploadPanel(
     library: WallpaperLibrary,
@@ -306,7 +300,7 @@ private fun UploadPanel(
     val server = remember {
         UploadServer(
             library,
-            // The heavy blur is tiny, so it only carries colour.
+            // Tiny, so it only gives the page its colors.
             backdrop = { wallpaper?.heavy?.let { png -> ByteArrayOutputStream().also { png.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray() } },
             onUploaded = onUploaded,
         )
