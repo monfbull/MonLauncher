@@ -35,16 +35,20 @@ class LanServer(
         }
     }
 
-    private var socket: ServerSocket? = null
+    /** The open server socket, or null when not running. Cleared by [stop] or when the lifetime ends. */
+    @Volatile private var socket: ServerSocket? = null
     private val connections = AtomicInteger(0)
 
-    /** Server address, or null without a network connection. */
+    /** Server address, or null if the server isn't running or there's no network connection. */
     val address: String?
-        get() = lanAddress()?.let { "http://$it:$PORT" }
+        get() = if (socket == null) null else lanAddress()?.let { "http://$it:$PORT" }
 
-    fun start() {
-        if (socket != null) return
-        val server = runCatching { ServerSocket(PORT).apply { soTimeout = 1000 } }.getOrNull() ?: return
+    /** Starts the server. Returns false if the port couldn't be opened, e.g. another app is using it. */
+    fun start(): Boolean {
+        if (socket != null) return true
+        val server = runCatching { ServerSocket(PORT).apply { soTimeout = 1000 } }
+            .onFailure { logProblem("Couldn't open port $PORT for the phone page", it) }
+            .getOrNull() ?: return false
         socket = server
         val deadline = System.currentTimeMillis() + lifetimeMs
         thread(name = "lan-server", isDaemon = true) {
@@ -71,7 +75,10 @@ class LanServer(
                 }
             }
             runCatching { server.close() }
+            // Lets start() run again after the lifetime ends, unless stop() or a new start() already replaced it.
+            if (socket === server) socket = null
         }
+        return true
     }
 
     fun stop() {

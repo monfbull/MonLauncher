@@ -312,8 +312,9 @@ private fun UploadPanel(
         )
     }
     var address by remember { mutableStateOf<String?>(null) }
+    var started by remember { mutableStateOf(true) }
     DisposableEffect(server) {
-        server.start()
+        started = server.start()
         address = server.address
         onDispose { server.stop() }
     }
@@ -324,6 +325,7 @@ private fun UploadPanel(
     LanAddressPanel(
         title = "Upload a wallpaper",
         address = address,
+        failed = !started,
         instructions = "Scan with a phone camera, or on any phone or computer on the same Wi-Fi open:",
         footer = "Waiting for a photo… This closes by itself once it arrives. Back cancels.",
         onDismiss = onDismiss,

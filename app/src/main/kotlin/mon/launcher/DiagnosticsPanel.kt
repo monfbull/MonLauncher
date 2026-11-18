@@ -100,8 +100,9 @@ fun DiagnosticsSharePanel(onDismiss: () -> Unit) {
         }
     }
     var address by remember { mutableStateOf<String?>(null) }
+    var started by remember { mutableStateOf(true) }
     DisposableEffect(server) {
-        server.start()
+        started = server.start()
         address = server.address
         onDispose { server.stop() }
     }
@@ -112,15 +113,23 @@ fun DiagnosticsSharePanel(onDismiss: () -> Unit) {
     LanAddressPanel(
         title = "Send diagnostics",
         address = address,
+        failed = !started,
         instructions = "Scan with a phone camera, or on any phone or computer on the same Wi-Fi open:",
         footer = "Then download the report and send it to the developer. Back closes this page.",
         onDismiss = onDismiss,
     )
 }
 
-/** Shows a [LanServer] address as a QR code and text. */
+/** Shows a [LanServer] address as a QR code and text. [failed] means the server couldn't start. */
 @Composable
-fun LanAddressPanel(title: String, address: String?, instructions: String, footer: String, onDismiss: () -> Unit) {
+fun LanAddressPanel(
+    title: String,
+    address: String?,
+    failed: Boolean,
+    instructions: String,
+    footer: String,
+    onDismiss: () -> Unit,
+) {
     GlassPanel(title, width = 680.dp, onDismiss = onDismiss) {
         if (address != null) {
             Row(Modifier.padding(start = 14.dp, top = 4.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -131,6 +140,11 @@ fun LanAddressPanel(title: String, address: String?, instructions: String, foote
                     PanelNote(footer)
                 }
             }
+        } else if (failed) {
+            PanelNote(
+                "The page couldn't be started. Another app may be using port ${LanServer.PORT}. Close this and try again.",
+                Modifier.padding(vertical = 4.dp),
+            )
         } else {
             PanelNote("The TV isn't connected to a network, so this can't be opened on a phone.", Modifier.padding(vertical = 4.dp))
         }
