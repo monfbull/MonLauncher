@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -23,6 +24,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** User preferences set from the settings panel. */
 data class LauncherSettings(
@@ -82,6 +85,14 @@ fun SettingsPanel(
     var showDiagnostics by remember { mutableStateOf(false) }
     var showIconPacks by remember { mutableStateOf(false) }
     val iconPacks = remember { IconPacks(context) }
+    // Looked up off the main thread, and again only when the choice changes. Null until loaded.
+    val iconPackName by produceState<String?>(null, settings.iconPack) {
+        value = withContext(Dispatchers.IO) {
+            iconPacks.effective(settings.iconPack)
+                ?.let { pack -> iconPacks.installed().firstOrNull { it.packageName == pack }?.label }
+                ?: "App icons"
+        }
+    }
     GlassPanel("Settings", width = 440.dp, onDismiss = onDismiss) {
         val first = remember { FocusRequester() }
         LaunchedEffect(Unit) { awaitFocus { first } }
@@ -116,9 +127,7 @@ fun SettingsPanel(
         }
         PanelRow(remember { FocusRequester() }, onSelect = { showIconPacks = true }) {
             BasicText("Icon pack", style = PanelText.row)
-            val current = iconPacks.effective(settings.iconPack)
-            val name = current?.let { pack -> iconPacks.installed().firstOrNull { it.packageName == pack }?.label } ?: "App icons"
-            BasicText("$name  ›", style = PanelText.value, maxLines = 1)
+            BasicText("${iconPackName.orEmpty()}  ›", style = PanelText.value, maxLines = 1)
         }
         PanelRow(remember { FocusRequester() }, onSelect = { showDiagnostics = true }) {
             BasicText("About & diagnostics", style = PanelText.row)
