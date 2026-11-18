@@ -1,16 +1,16 @@
 package mon.launcher
 
 import android.app.ActivityManager
-import android.app.ApplicationExitInfo
 import android.app.Application
+import android.app.ApplicationExitInfo
 import android.app.role.RoleManager
 import android.content.Context
+import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Process
 import android.os.SystemClock
 import android.util.Log
 import android.view.Display
-import android.hardware.display.DisplayManager
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter

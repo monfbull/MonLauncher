@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.net.Uri
 import android.os.SystemClock
@@ -12,7 +11,6 @@ import android.provider.Settings
 import android.util.DisplayMetrics
 import androidx.core.graphics.drawable.toBitmap
 import mon.launcher.core.InstalledApp
-import mon.launcher.core.LogoCatalog
 import mon.launcher.core.Place
 import mon.launcher.core.SavedState
 

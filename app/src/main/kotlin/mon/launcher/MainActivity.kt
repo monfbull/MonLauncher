@@ -16,7 +16,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -25,6 +24,7 @@ import mon.launcher.core.Action
 import mon.launcher.core.Focus
 import mon.launcher.core.Home
 import mon.launcher.core.Place
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     private lateinit var apps: AppSource
