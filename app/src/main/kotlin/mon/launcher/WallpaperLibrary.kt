@@ -153,12 +153,18 @@ class WallpaperLibrary(private val context: Context) {
     private fun decodeSmall(file: File): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.path, bounds)
-        if (bounds.outWidth <= 0) return null
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= THUMB_WIDTH) sample *= 2
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        val sample = sampleSize(bounds.outWidth, bounds.outHeight, THUMB_WIDTH, 1)
         val decoded = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return null
-        val height = THUMB_WIDTH * decoded.height / decoded.width
-        return if (decoded.width > THUMB_WIDTH) Bitmap.createScaledBitmap(decoded, THUMB_WIDTH, height, true) else decoded
+        // Images taller than square are cropped to their centre square, so a very tall image can't
+        // scale up to a huge thumbnail. Thumbnails are shown cropped to 16:9, so nothing visible is lost.
+        val source = if (decoded.height > decoded.width) {
+            Bitmap.createBitmap(decoded, 0, (decoded.height - decoded.width) / 2, decoded.width, decoded.width)
+        } else {
+            decoded
+        }
+        val height = (THUMB_WIDTH.toLong() * source.height / source.width).toInt().coerceAtLeast(1)
+        return if (source.width > THUMB_WIDTH) Bitmap.createScaledBitmap(source, THUMB_WIDTH, height, true) else source
     }
 
     private fun images(dir: File, depth: Int): List<File> {

@@ -13,6 +13,28 @@ class WallpaperImages(val sharp: Bitmap, val glass: Bitmap, val heavy: Bitmap, v
 /** Changes when the file is replaced or edited. */
 fun wallpaperVersion(file: File) = "${file.path}:${file.lastModified()}:${file.length()}"
 
+/**
+ * Most pixels decoded from any one image: six 1080p screens, about 50 MB in memory. Enough for a
+ * 12 MP portrait photo to decode at full size, so it isn't softened before cropping.
+ */
+private const val MAX_DECODE_PIXELS = 6L * 1920 * 1080
+
+/**
+ * Power-of-two sample size for decoding a [width]x[height] image. Shrinks while both sides stay at
+ * least [minWidth]x[minHeight], then further until the result has at most [MAX_DECODE_PIXELS].
+ * The second step is for very long, thin images (e.g. 60000x1000), which the first can't shrink:
+ * decoded at full size they'd need hundreds of MB.
+ */
+internal fun sampleSize(width: Int, height: Int, minWidth: Int, minHeight: Int): Int {
+    var sample = 1
+    while (width / (sample * 2) >= minWidth && height / (sample * 2) >= minHeight) sample *= 2
+    // Rounded up, so a side that shrinks below one pixel is still counted as one.
+    while (ceilDiv(width, sample) * ceilDiv(height, sample) > MAX_DECODE_PIXELS) sample *= 2
+    return sample
+}
+
+private fun ceilDiv(a: Int, b: Int): Long = (a.toLong() + b - 1) / b
+
 object Wallpaper {
     private const val WIDTH = 1920
     private const val HEIGHT = 1080
@@ -78,9 +100,8 @@ object Wallpaper {
         val height = HEIGHT
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.path, bounds)
-        if (bounds.outWidth <= 0) return null
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= width && bounds.outHeight / (sample * 2) >= height) sample *= 2
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        val sample = sampleSize(bounds.outWidth, bounds.outHeight, width, height)
         val decoded = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
             ?: return null
         val sharp = centerCrop(decoded, width, height)
@@ -99,8 +120,9 @@ object Wallpaper {
 
     private fun centerCrop(src: Bitmap, width: Int, height: Int): Bitmap {
         val scale = maxOf(width.toFloat() / src.width, height.toFloat() / src.height)
-        val w = (width / scale).toInt().coerceAtMost(src.width)
-        val h = (height / scale).toInt().coerceAtMost(src.height)
+        // At least one pixel: for extreme proportions the crop on the short side rounds down to 0.
+        val w = (width / scale).toInt().coerceIn(1, src.width)
+        val h = (height / scale).toInt().coerceIn(1, src.height)
         val cropped = Bitmap.createBitmap(src, (src.width - w) / 2, (src.height - h) / 2, w, h)
         return Bitmap.createScaledBitmap(cropped, width, height, true)
     }
