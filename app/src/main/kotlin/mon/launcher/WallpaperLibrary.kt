@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.LruCache
 import androidx.compose.ui.graphics.ImageBitmap
@@ -20,7 +21,10 @@ import java.io.InputStream
  */
 class WallpaperLibrary(private val context: Context) {
     val folder = File(context.filesDir, "wallpapers")
-    private val downloads = File("/sdcard/Download")
+    // Deprecated for scoped storage, but this reads files directly with the photo permission, so
+    // the real path is what's needed. Unlike a hardcoded /sdcard/Download, it's correct on every device.
+    @Suppress("DEPRECATION")
+    private val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     private val prefs = context.getSharedPreferences("wallpapers", Context.MODE_PRIVATE)
     private val thumbDir = File(context.cacheDir, "wallpaper-thumbs")
     private val thumbs = LruCache<String, ImageBitmap>(48)
