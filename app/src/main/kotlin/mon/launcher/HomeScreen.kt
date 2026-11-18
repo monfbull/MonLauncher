@@ -19,7 +19,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,6 +28,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -56,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -708,24 +709,27 @@ private fun MoveArrows(left: Boolean, right: Boolean) {
 
 @Composable
 private fun Chevron(pointsLeft: Boolean, modifier: Modifier) {
-    Canvas(modifier.size(width = 11.dp, height = 24.dp)) {
-        val stroke = 3.dp.toPx()
-        val inset = stroke / 2
-        val tipX = if (pointsLeft) inset else size.width - inset
-        val armX = if (pointsLeft) size.width - inset else inset
-        val path = android.graphics.Path().apply {
-            moveTo(armX, inset)
-            lineTo(tipX, size.height / 2)
-            lineTo(armX, size.height - inset)
-        }
-        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            style = android.graphics.Paint.Style.STROKE
-            strokeWidth = stroke
-            strokeCap = android.graphics.Paint.Cap.ROUND
-            strokeJoin = android.graphics.Paint.Join.ROUND
-            color = android.graphics.Color.argb(240, 255, 255, 255)
-            setShadowLayer(4.dp.toPx(), 0f, 1.dp.toPx(), android.graphics.Color.argb(110, 0, 0, 0))
-        }
-        drawIntoCanvas { it.nativeCanvas.drawPath(path, paint) }
-    }
+    // The path and paint are built once per size, not on every frame of the fade.
+    Spacer(
+        modifier.size(width = 11.dp, height = 24.dp).drawWithCache {
+            val stroke = 3.dp.toPx()
+            val inset = stroke / 2
+            val tipX = if (pointsLeft) inset else size.width - inset
+            val armX = if (pointsLeft) size.width - inset else inset
+            val path = android.graphics.Path().apply {
+                moveTo(armX, inset)
+                lineTo(tipX, size.height / 2)
+                lineTo(armX, size.height - inset)
+            }
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                style = android.graphics.Paint.Style.STROKE
+                strokeWidth = stroke
+                strokeCap = android.graphics.Paint.Cap.ROUND
+                strokeJoin = android.graphics.Paint.Join.ROUND
+                color = android.graphics.Color.argb(240, 255, 255, 255)
+                setShadowLayer(4.dp.toPx(), 0f, 1.dp.toPx(), android.graphics.Color.argb(110, 0, 0, 0))
+            }
+            onDrawBehind { drawIntoCanvas { it.nativeCanvas.drawPath(path, paint) } }
+        },
+    )
 }
