@@ -23,6 +23,7 @@ private const val MAX_DECODE_PIXELS = 6L * 1920 * 1080
 /**
  * Doubles the sample size while both sides stay at least [minWidth]x[minHeight].
  * Then keeps doubling until the image has at most [MAX_DECODE_PIXELS].
+ * Without the cap, a 60 MP photo decoded at full size would need hundreds of MB.
  * The second step is for very long, thin images (e.g. 60000x1000).
  */
 internal fun sampleSize(width: Int, height: Int, minWidth: Int, minHeight: Int): Int {

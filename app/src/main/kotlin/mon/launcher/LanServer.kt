@@ -13,7 +13,7 @@ import kotlin.concurrent.thread
 
 /**
  * HTTP server for pages opened from another device on the local network.
- * Stops after [lifetimeMs] even if nothing calls [stop].
+ * Only runs while its panel is open, and stops after [lifetimeMs] even if nothing calls [stop].
  */
 class LanServer(
     private val lifetimeMs: Long = 10 * 60_000L,

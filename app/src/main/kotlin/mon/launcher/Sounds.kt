@@ -13,7 +13,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 
-/** Focus ticks only play after an arrow press, so focus changes made by code are silent. */
+/** UI sounds, played through a SoundPool for low latency. Focus ticks only play after an arrow press, so focus changes made by code are silent. */
 class Sounds(context: Context) {
     private val pool = SoundPool.Builder()
         .setMaxStreams(4)

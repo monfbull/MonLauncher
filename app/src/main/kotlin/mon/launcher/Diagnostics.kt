@@ -193,7 +193,7 @@ object DiagnosticsReport {
 
     private val PRIVATE = listOf("/data/app/", "ApkAssets")
 
-    /** Harmless warnings logged on every start. */
+    /** Routine warnings logged on every start. */
     private val NOISE = listOf(
         "OnBackInvokedCallback", "enableOnBackInvokedCallback", "Unable to match the desired swap behavior",
         "Not starting debugger", "Codec2Client: query -- param skipped",

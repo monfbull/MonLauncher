@@ -123,7 +123,7 @@ private enum class Overlay {
 
 private fun Home.tilesFor(overlay: Overlay) = if (overlay == Overlay.Hidden) hiddenApps else grid
 
-/** First tile of the last row. Pressing Left on it opens the hidden apps page. */
+/** First tile of the last row. Pressing Left on it opens the hidden apps page, if any apps are hidden. */
 private fun secretIndex(tiles: List<Tile>): Int? =
     if (tiles.isEmpty()) null else (tiles.size - 1) / GRID_COLUMNS * GRID_COLUMNS
 
@@ -230,6 +230,7 @@ fun HomeScreen(
         onFocusHandled()
     }
 
+    // When the overlay changes, focus its first tile (or the tile that opened the hidden page), or return to the dock.
     LaunchedEffect(overlay) {
         val current = home ?: return@LaunchedEffect
         if (focusRequest != null) return@LaunchedEffect
@@ -543,7 +544,7 @@ private fun Dock(
 /**
  * The hidden apps page sits left of the grid.
  * Left on the first tile of the last row opens it.
- * Right at the end of a row, or Back, returns.
+ * Right at the end of a row returns from the hidden page, and Back returns from either page.
  */
 @Composable
 private fun AnimatedVisibilityScope.AppsOverlay(

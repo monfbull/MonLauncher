@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** Clock in 12- or 24-hour format, with the date in the device locale's order. */
 @Composable
 fun Clock(modifier: Modifier = Modifier) {
     val context = LocalContext.current

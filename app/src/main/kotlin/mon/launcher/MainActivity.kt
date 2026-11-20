@@ -186,7 +186,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    /** Wallpaper photos are kept. */
+    /** Resets dock, hidden apps, settings and caches. Wallpaper photos are kept. */
     private fun resetLauncher() {
         listOf("home", "settings").forEach { getSharedPreferences(it, MODE_PRIVATE).edit().clear().commit() }
         File(filesDir, "wallpaper").deleteRecursively()

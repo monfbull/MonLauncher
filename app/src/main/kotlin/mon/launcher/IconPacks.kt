@@ -10,7 +10,7 @@ import org.xmlpull.v1.XmlPullParser
 
 data class IconPack(val packageName: String, val label: String)
 
-/** Reads installed icon packs. Each pack's appfilter.xml maps app activities to image names. */
+/** Reads installed icon packs. Each pack's appfilter.xml maps app activities to image names. Nothing is copied into the launcher. */
 class IconPacks(private val context: Context) {
     private val pm = context.packageManager
     private var cached: Pair<String, LogoCatalog>? = null

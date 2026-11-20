@@ -69,6 +69,7 @@ class SettingsStore(context: Context) {
     }
 }
 
+/** The settings panel. Changes apply immediately. */
 @Composable
 fun SettingsPanel(
     settings: LauncherSettings,
@@ -82,6 +83,7 @@ fun SettingsPanel(
     var showDiagnostics by remember { mutableStateOf(false) }
     var showIconPacks by remember { mutableStateOf(false) }
     val iconPacks = remember { IconPacks(context) }
+    // Looked up off the main thread, and again only when the choice changes. Null until loaded.
     val iconPackName by produceState<String?>(null, settings.iconPack) {
         value = withContext(Dispatchers.IO) {
             iconPacks.effective(settings.iconPack)

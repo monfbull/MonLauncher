@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
+/** How long the phone pages stay available, in minutes. */
 const val LAN_PAGE_MINUTES = 10
 
 @Composable
