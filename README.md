@@ -80,13 +80,13 @@ Sideload Launcher Manager (1.0.4 for Android TV) via Downloader code `160445` or
 **3. ADB**
 
 ```bash
-adb shell cmd package set-home-activity mon.launcher/.MainActivity
+adb shell cmd role add-role-holder --user 0 android.app.role.HOME mon.launcher
 ```
 
 Check the current default:
 
 ```bash
-adb shell cmd package resolve-activity -c android.intent.category.HOME -a android.intent.action.MAIN
+adb shell cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN
 ```
 
 ### Switch back
