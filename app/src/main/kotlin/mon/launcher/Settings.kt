@@ -1,6 +1,7 @@
 package mon.launcher
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,6 +70,12 @@ class SettingsStore(context: Context) {
     }
 }
 
+/** Opens the system settings app (TV settings on Android TV). */
+fun openAndroidSettings(context: Context) {
+    runCatching { context.startActivity(Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        .onFailure { logProblem("Couldn't open Android settings", it) }
+}
+
 /** The settings panel. Changes apply immediately. */
 @Composable
 fun SettingsPanel(
@@ -94,8 +101,13 @@ fun SettingsPanel(
     GlassPanel("Settings", width = 440.dp, onDismiss = onDismiss) {
         val first = remember { FocusRequester() }
         LaunchedEffect(Unit) { awaitFocus { first } }
+        // Most remotes have no button for this, and MonLauncher replaces the home screen that links to it.
+        PanelRow(first, onSelect = { openAndroidSettings(context) }) {
+            BasicText("Android settings", style = PanelText.row)
+            BasicText("›", style = PanelText.value)
+        }
         PanelRow(
-            first,
+            remember { FocusRequester() },
             onSelect = {
                 val next = settings.copy(soundsOn = !settings.soundsOn)
                 onChange(next)

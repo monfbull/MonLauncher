@@ -1,8 +1,6 @@
 package mon.launcher
 
-import android.content.Intent
 import android.os.Build
-import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -200,9 +198,9 @@ fun RecoveryScreen(onTryAgain: () -> Unit, onReset: () -> Unit) {
                 BasicText("Forgets the dock, hidden apps and settings. Wallpaper photos are kept.", style = PanelText.note)
             }
         }
-        PanelRow(remember { FocusRequester() }, onSelect = {
-            runCatching { context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        }) { BasicText("Open Android settings", style = PanelText.row) }
+        PanelRow(remember { FocusRequester() }, onSelect = { openAndroidSettings(context) }) {
+            BasicText("Open Android settings", style = PanelText.row)
+        }
     }
     if (sharing) DiagnosticsSharePanel(onDismiss = { sharing = false })
 }
