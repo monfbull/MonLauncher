@@ -24,7 +24,7 @@ Early beta.
 - Icon pack support
 - Navigation sounds, with on/off and volume settings
 - Diagnostics: view crash reports on your phone and download them to send with a bug report
-- Android settings at the top of MonLauncher's settings, since most remotes have no settings button
+- Android settings at the top of MonLauncher's settings, since some remotes have no settings button
 
 ## Icon packs
 
