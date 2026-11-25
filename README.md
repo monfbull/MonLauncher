@@ -6,15 +6,15 @@
 
 **A clean home screen for Android TV and Google TV: your apps, your wallpaper, and nothing else.**
 
+![MonLauncher home screen with the dock](docs/screenshots/home.png)
+
+Shown with the [Projectivy Icon Pack](#icon-packs).
+
 The stock Google TV home screen is built around recommendations and sponsored rows. MonLauncher replaces it with a dock for your favorite apps, a grid for everything else, and a wallpaper you choose. No ads, no analytics.
 
 Open source, written in Kotlin with Jetpack Compose.
 
 Early beta.
-
-![MonLauncher home screen with the dock](docs/screenshots/home.png)
-
-Shown with the [Projectivy Icon Pack](#icon-packs).
 
 ## Features
 
