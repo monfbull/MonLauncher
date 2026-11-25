@@ -104,8 +104,10 @@ The stock home screen always takes the Home button while it's enabled, even if y
    adb shell pm disable-user --user 0 com.google.android.tvlauncher
    ```
 
-   If step 2 showed a different package, disable that one instead.
+   If step 2 showed a different package, disable that one instead, and note its name. You'll need it to switch back.
 4. Press Home. MonLauncher opens. If the TV asks which home app to use, choose MonLauncher.
+
+Leave network debugging on until you're sure you're keeping MonLauncher. Switching back needs ADB too.
 
 A system update can turn the stock home screen back on. If that happens, run step 3 again.
 
@@ -119,7 +121,7 @@ Releases are all signed with the same key, so they install over each other. A bu
 
 ### Switch back
 
-Switch back before uninstalling MonLauncher. Uninstalling first leaves the TV without a home screen.
+Switch back before uninstalling MonLauncher. Uninstalling it first leaves the TV without a home screen until you switch back.
 
 - Launcher Manager: open it and turn off the custom launcher. The stock home screen comes back.
 - ADB: turn the stock home screen back on:
@@ -131,6 +133,14 @@ Switch back before uninstalling MonLauncher. Uninstalling first leaves the TV wi
   # Android TV without Google TV
   adb shell pm enable com.google.android.tvlauncher
   ```
+
+  If you disabled a different package in step 3, enable that one instead:
+
+  ```bash
+  adb shell pm enable <package name>
+  ```
+
+Already uninstalled MonLauncher and the TV has no home screen? If you set it up with ADB, run the ADB commands above. They still work after uninstalling.
 
 Uninstalling deletes wallpapers you uploaded to MonLauncher. To keep one, select it in the wallpaper settings and choose **Save a copy to Download** first.
 
