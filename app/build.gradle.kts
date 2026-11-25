@@ -11,7 +11,7 @@ android {
     compileSdk = 35
     defaultConfig {
         applicationId = "mon.launcher"
-        minSdk = 31
+        minSdk = 30
         targetSdk = 34
         // Increase versionCode for every distributed build.
         versionCode = 2
