@@ -1,7 +1,7 @@
 # MonLauncher
 
 [![Release](https://img.shields.io/github/v/release/monfbull/MonLauncher?include_prereleases&label=release)](https://github.com/monfbull/MonLauncher/releases)
-[![Android 12+](https://img.shields.io/badge/Android%20TV-12%2B-3DDC84?logo=android&logoColor=white)](#compatibility)
+[![Android 11+](https://img.shields.io/badge/Android%20TV-11%2B-3DDC84?logo=android&logoColor=white)](#compatibility)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
 **A clean home screen for Android TV and Google TV: your apps, your wallpaper, and nothing else.**
@@ -22,6 +22,7 @@ Early beta.
 - Icon pack support
 - Navigation sounds, with on/off and volume settings
 - Diagnostics: view crash reports on your phone and download them to send with a bug report
+- Android settings at the top of MonLauncher's settings, since most remotes have no settings button
 
 ## Icon packs
 
@@ -31,7 +32,7 @@ The Projectivy Icon Pack is currently the only supported icon pack. Support for 
 
 ## Compatibility
 
-Requires Android 12 or newer.
+Requires Android 11 or newer.
 
 | Device | Status | Notes |
 |---|---|---|
@@ -39,14 +40,14 @@ Requires Android 12 or newer.
 | Google TV Streamer | Should work | Android 14 |
 | Chromecast with Google TV (4K and HD) | Should work | Android 12 or 14, depending on updates |
 | Onn 4K Pro | Should work | |
-| Other Android TV and Google TV devices, including TVs | Should work | Android 12 or newer |
-| NVIDIA Shield TV | Not supported | Android 11 |
-| Fire TV (Fire OS) | Not supported | Android 11 or earlier, and Amazon blocks third-party home screens |
+| NVIDIA Shield TV | Should work | Android 11. Tested on the Android 11 Android TV emulator, not yet on a real Shield |
+| Other Android TV and Google TV devices, including TVs | Should work | Android 11 or newer |
+| Fire TV (Fire OS) | Not supported | Amazon blocks third-party home screens |
 | Fire TV (Vega OS), such as Fire TV Stick 4K Select | Not supported | Not Android, can't run Android apps |
-| Any device on Android 11 or earlier | Not supported | Won't install |
+| Any device on Android 10 or earlier | Not supported | Won't install |
 | Phones and tablets | Not supported | Designed for TV and remote only |
 
-Support for Android 11 and earlier is planned, which would include Shield TV and Fire TV on Fire OS. On Fire TV, MonLauncher would likely open as a regular app rather than replace the home screen.
+Support for Android 9 and 10 is planned.
 
 Tried it on a device not listed? [Open an issue](https://github.com/monfbull/MonLauncher/issues) and say how it went.
 
@@ -64,36 +65,56 @@ Open MonLauncher once before setting it as default.
 
 Google TV does not list third-party launchers in Settings > Default apps. Use one of these:
 
-**1. Button Mapper (no PC)**
-
-1. Install [Button Mapper](https://play.google.com/store/apps/details?id=flar2.homebutton) from the Play Store on the TV
-2. Settings > System > Accessibility > turn on Button Mapper
-3. Open Button Mapper > Home Button > Customize > Single Tap > MonLauncher
-4. Press Home to test
-
-Free version is enough for this.
-
-**2. Launcher Manager**
+**1. Launcher Manager (no PC)**
 
 Sideload Launcher Manager (1.0.4 for Android TV) via Downloader code `160445` or from the [XDA thread](https://forum.xda-developers.com/t/app-firetv-noroot-launcher-manager-change-launcher-without-root.4176349/post-83705245), open it, and select MonLauncher as the default launcher.
 
-**3. ADB**
+**2. ADB**
 
-```bash
-adb shell cmd role add-role-holder --user 0 android.app.role.HOME mon.launcher
-```
+The stock home screen always takes the Home button while it's enabled, even if you set MonLauncher as the default. So with ADB, you turn the stock home screen off instead. Turning it off doesn't uninstall it, and you can turn it back on at any time (see [Switch back](#switch-back)).
 
-Check the current default:
+1. Install MonLauncher and open it once.
+2. Find your stock home screen:
 
-```bash
-adb shell cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN
-```
+   ```bash
+   adb shell cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN
+   ```
+
+   The last line starts with its package name, for example `com.google.android.apps.tv.launcherx/.home.HomeActivity`.
+3. Turn it off. On Google TV:
+
+   ```bash
+   adb shell pm disable-user --user 0 com.google.android.apps.tv.launcherx
+   adb shell pm disable-user --user 0 com.google.android.tungsten.setupwraith
+   ```
+
+   The second package turns the stock home screen back on by itself if it's left enabled.
+
+   On Android TV without Google TV, such as Shield:
+
+   ```bash
+   adb shell pm disable-user --user 0 com.google.android.tvlauncher
+   ```
+
+   If step 2 showed a different package, disable that one instead.
+4. Press Home. MonLauncher opens. If the TV asks which home app to use, choose MonLauncher.
+
+A system update can turn the stock home screen back on. If that happens, run step 3 again.
 
 ### Switch back
 
-- Button Mapper: remove the Home button customization, or turn off Button Mapper in Accessibility
-- Launcher Manager: select your previous launcher
-- ADB: uninstall MonLauncher
+Switch back before uninstalling MonLauncher. Uninstalling first leaves the TV without a home screen.
+
+- Launcher Manager: open it and turn off the custom launcher. The stock home screen comes back.
+- ADB: turn the stock home screen back on:
+
+  ```bash
+  # Google TV
+  adb shell pm enable com.google.android.tungsten.setupwraith
+  adb shell pm enable com.google.android.apps.tv.launcherx
+  # Android TV without Google TV
+  adb shell pm enable com.google.android.tvlauncher
+  ```
 
 Uninstalling deletes wallpapers you uploaded to MonLauncher. To keep one, select it in the wallpaper settings and choose **Save a copy to Download** first.
 
