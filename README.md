@@ -61,7 +61,7 @@ https://github.com/monfbull/MonLauncher/releases/latest/download/MonLauncher.apk
 
 Install it with one of these:
 
-- [Downloader](https://play.google.com/store/apps/details?id=com.esaba.downloader) (on the TV): enter the link above. It downloads and installs from there.
+- [Downloader](https://play.google.com/store/apps/details?id=com.esaba.downloader) (on the TV): enter code `9324705`, or the link above. It downloads and installs from there.
 - USB: download the APK on a computer, copy it to a drive, and open it on the TV with a file manager
 - ADB: download the APK on a computer, then run `adb install MonLauncher.apk`
 
