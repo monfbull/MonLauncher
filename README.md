@@ -42,7 +42,7 @@ Requires Android 11 or newer.
 | Onn 4K Pro | Should work | |
 | NVIDIA Shield TV | Should work | Android 11. Tested on the Android 11 Android TV emulator, not yet on a real Shield |
 | Other Android TV and Google TV devices, including TVs | Should work | Android 11 or newer |
-| Fire TV (Fire OS) | Not supported | Amazon blocks third-party home screens |
+| Fire TV (Fire OS) | Not supported | Installs on Fire OS 8, but Amazon blocks third-party home screens |
 | Fire TV (Vega OS), such as Fire TV Stick 4K Select | Not supported | Not Android, can't run Android apps |
 | Any device on Android 10 or earlier | Not supported | Won't install |
 | Phones and tablets | Not supported | Designed for TV and remote only |
@@ -106,6 +106,14 @@ The stock home screen always takes the Home button while it's enabled, even if y
 4. Press Home. MonLauncher opens. If the TV asks which home app to use, choose MonLauncher.
 
 A system update can turn the stock home screen back on. If that happens, run step 3 again.
+
+### Updating
+
+Install the new APK over the old one: enter the Downloader code or link again, or run `adb install -r MonLauncher.apk`. Your dock, hidden apps, settings and wallpapers stay. There's no need to uninstall first or to set MonLauncher as default again.
+
+If the TV asks which home app to use after updating, choose MonLauncher.
+
+Releases are all signed with the same key, so they install over each other. A build you made yourself is signed with a different key and won't update in place.
 
 ### Switch back
 
