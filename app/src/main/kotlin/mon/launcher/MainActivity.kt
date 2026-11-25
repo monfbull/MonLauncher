@@ -1,6 +1,5 @@
 package mon.launcher
 
-import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -115,8 +114,8 @@ class MainActivity : ComponentActivity() {
             addDataScheme("package")
         })
 
-        if (checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.READ_MEDIA_IMAGES), 1)
+        if (checkSelfPermission(photoPermission) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(photoPermission), 1)
         }
 
         lifecycleScope.launch {

@@ -108,7 +108,7 @@ object DiagnosticsReport {
         appendLine("Screen: ${screen(context)}")
         appendLine("TV on for ${TimeUnit.MILLISECONDS.toMinutes(SystemClock.elapsedRealtime())} min (since it last restarted)")
         appendLine("Default home app: ${if (isDefaultHome(context)) "yes" else "no"}")
-        val photos = context.checkSelfPermission(android.Manifest.permission.READ_MEDIA_IMAGES) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val photos = context.checkSelfPermission(photoPermission) == android.content.pm.PackageManager.PERMISSION_GRANTED
         appendLine("Photo access (wallpaper imports from Download): ${if (photos) "granted" else "not granted"}")
         appendLine()
 

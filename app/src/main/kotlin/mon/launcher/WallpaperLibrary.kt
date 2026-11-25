@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.LruCache
@@ -14,6 +15,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
+
+/** The permission that lets the launcher read images in Download. It was renamed in Android 13. */
+val photoPermission: String =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) android.Manifest.permission.READ_MEDIA_IMAGES
+    else android.Manifest.permission.READ_EXTERNAL_STORAGE
 
 /**
  * Wallpapers live in app storage, so deleting needs no extra permission.
