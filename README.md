@@ -14,11 +14,6 @@ Early beta.
 
 ![MonLauncher home screen with the dock](docs/screenshots/home.png)
 
-<p>
-  <img src="docs/screenshots/apps.png" width="49%" alt="All apps grid">
-  <img src="docs/screenshots/settings.png" width="49%" alt="MonLauncher settings">
-</p>
-
 Shown with the [Projectivy Icon Pack](#icon-packs).
 
 ## Features
