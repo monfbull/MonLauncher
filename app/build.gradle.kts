@@ -14,8 +14,8 @@ android {
         minSdk = 30
         targetSdk = 34
         // Increase versionCode for every distributed build.
-        versionCode = 2
-        versionName = "0.1.0-beta.2"
+        versionCode = 3
+        versionName = "0.1.0-beta.3"
     }
     // Reads keystore.properties (not in the repo).
     // Every release must use the same key, or it won't install as an update.
